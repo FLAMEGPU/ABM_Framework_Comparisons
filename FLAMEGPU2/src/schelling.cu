@@ -348,12 +348,11 @@ int main(int argc, const char ** argv) {
     /**
      * Execution
      */
-    // @todo - the simualtion object has it's own timers.
-    auto start = std::chrono::high_resolution_clock::now();
+    
     cudaSimulation.simulate();
-    auto stop = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-    std::cout << duration.count();
+
+    // Print the exeuction time to stdout
+    fprintf(stdout, "Elapsed (s): %.6f\n", cudaSimulation.getElapsedTimeSimulation());
 
     /**
      * Export Pop

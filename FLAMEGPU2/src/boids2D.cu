@@ -402,8 +402,8 @@ int main(int argc, const char ** argv) {
     simulator.simulate();
 
     // Print the exeuction time to stdout
-    fprintf(stdout, "%.6f seconds\n", simulator.getElapsedTimeSimulation());
-
+    fprintf(stdout, "Elapsed (s): %.6f\n", simulator.getElapsedTimeSimulation());
+    
     // Join the visualsition if required
 #ifdef VISUALISATION
     visualisation.join();
