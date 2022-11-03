@@ -329,10 +329,13 @@ int main(int argc, const char ** argv) {
     flamegpu::visualiser::ModelVis &visualisation = simulator.getVisualisation();
     {
         flamegpu::EnvironmentDescription &env = model.Environment();
-        float envWidth = env.getProperty<float>("MAX_POSITION") - env.getProperty<float>("MIN_POSITION");
+        const float ENV_WIDTH = env.getProperty<float>("MAX_POSITION") - env.getProperty<float>("MIN_POSITION");
+        const float ENV_CENTER = env.getProperty<float>("MIN_POSITION") + (ENV_WIDTH) / 2.0f;
+        const float INIT_CAM_DISTANCE = 1.05f;
         const float INIT_CAM = env.getProperty<float>("MAX_POSITION") * 1.25f;
-        visualisation.setInitialCameraLocation(INIT_CAM, INIT_CAM, INIT_CAM);
-        visualisation.setCameraSpeed(0.001f * envWidth);
+        visualisation.setInitialCameraLocation(ENV_CENTER, ENV_CENTER, INIT_CAM_DISTANCE);
+        visualisation.setInitialCameraTarget(ENV_CENTER, ENV_CENTER, 0.0f);
+        visualisation.setCameraSpeed(0.001f * ENV_WIDTH);
         visualisation.setViewClips(0.00001f, 50);
         auto &circ_agt = visualisation.addAgent("Boid");
         // Position vars are named x, y so they are used by default
@@ -403,7 +406,7 @@ int main(int argc, const char ** argv) {
 
     // Print the exeuction time to stdout
     fprintf(stdout, "Elapsed (s): %.6f\n", simulator.getElapsedTimeSimulation());
-    
+
     // Join the visualsition if required
 #ifdef VISUALISATION
     visualisation.join();
