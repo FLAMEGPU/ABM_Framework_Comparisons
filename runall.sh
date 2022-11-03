@@ -25,3 +25,6 @@ python3 Mesa/Schelling/benchmark.py
 python3 Mesa/ForestFire/benchmark.py
 
 echo "Mason Benchmarks must be run manually"
+
+echo "Benchmarking FLAMEGPU2"
+python3 FLAMEGPU2/benchmark.py
