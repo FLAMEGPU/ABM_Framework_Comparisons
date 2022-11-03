@@ -15,3 +15,4 @@ This repository includes code for benchmarking purposes from the following proje
 - [NetLogo, Wolf Sheep Predation](http://ccl.northwestern.edu/netlogo/models/WolfSheepPredation) [Creative Commons Attribution-NonCommercial-ShareAlike 3.0]
 - [NetLogo, Fire](http://ccl.northwestern.edu/netlogo/models/Fire) [Creative Commons Attribution-NonCommercial-ShareAlike 3.0]
 - [NetLogo, Segregation](http://ccl.northwestern.edu/netlogo/models/Segregation) [Creative Commons Attribution-NonCommercial-ShareAlike 3.0]
+- [FLAMEGPU2](https://github.com/FLAMEGPU/FLAMEGPU2/blob/master/LICENSE.md) [MIT]
