@@ -75,20 +75,28 @@ FLAMEGPU_HOST_DEVICE_FUNCTION void vec3Normalize(float &x, float &y) {
 }
 
 /**
- * Clamp each component of a 3-part position to lie within a minimum and maximum value.
+ * Ensure that the x and y position are withini the defined boundary area, wrapping to the far side if out of bounds.
  * Performs the operation in place
- * Unlike the FLAME GPU 1 example, this is a clamping operation, rather than wrapping.
  * @param x x component of the vector
  * @param y y component of the vector
  * @param MIN_POSITION the minimum value for each component
  * @param MAX_POSITION the maximum value for each component
  */
-FLAMEGPU_HOST_DEVICE_FUNCTION void clampPosition(float &x, float &y, const float MIN_POSITION, const float MAX_POSITION) {
-    x = (x < MIN_POSITION)? MIN_POSITION: x;
-    x = (x > MAX_POSITION)? MAX_POSITION: x;
-
-    y = (y < MIN_POSITION)? MIN_POSITION: y;
-    y = (y > MAX_POSITION)? MAX_POSITION: y;
+FLAMEGPU_HOST_DEVICE_FUNCTION void wrapPosition(float &x, float &y, const float MIN_POSITION, const float MAX_POSITION) {
+    const float WIDTH = MAX_POSITION - MIN_POSITION;
+    if (x < MIN_POSITION) {
+        x += WIDTH;
+    }
+    if (y < MIN_POSITION) {
+        y += WIDTH;
+    }
+    
+    if (x > MAX_POSITION) {
+        x -= WIDTH;
+    }
+    if (y > MAX_POSITION) {
+        y -= WIDTH;
+    }
 }
 
 /**
@@ -133,12 +141,12 @@ FLAMEGPU_AGENT_FUNCTION(inputdata, flamegpu::MessageSpatial2D, flamegpu::Message
     const float INTERACTION_RADIUS = FLAMEGPU->environment.getProperty<float>("INTERACTION_RADIUS");
     const float SEPARATION_RADIUS = FLAMEGPU->environment.getProperty<float>("SEPARATION_RADIUS");
     // Iterate location messages, accumulating relevant data and counts.
-    for (const auto &message : FLAMEGPU->message_in(agent_x, agent_y)) {
+    for (const auto &message : FLAMEGPU->message_in.wrap(agent_x, agent_y)) {
         // Ignore self messages.
         if (message.getVariable<flamegpu::id_t>("id") != id) {
             // Get the message location and velocity.
-            const float message_x = message.getVariable<float>("x");
-            const float message_y = message.getVariable<float>("y");
+            const float message_x = message.getVirtualX();
+            const float message_y = message.getVirtualY();
 
             // Check interaction radius
             float separation = vec3Length(agent_x - message_x, agent_y - message_y);
@@ -220,33 +228,15 @@ FLAMEGPU_AGENT_FUNCTION(inputdata, flamegpu::MessageSpatial2D, flamegpu::Message
         vec3Mult(agent_fx, agent_fy, minSpeed);
     }
 
-    // Steer away from walls - Computed post normalization to ensure good avoidance. Prevents constant term getting swamped
-    const float wallInteractionDistance = 0.10f;
-    const float wallSteerStrength = 0.05f;
-    const float minPosition = FLAMEGPU->environment.getProperty<float>("MIN_POSITION");
-    const float maxPosition = FLAMEGPU->environment.getProperty<float>("MAX_POSITION");
-
-    if (agent_x - minPosition < wallInteractionDistance) {
-        agent_fx += wallSteerStrength;
-    }
-    if (agent_y - minPosition < wallInteractionDistance) {
-        agent_fy += wallSteerStrength;
-    }
-
-    if (maxPosition - agent_x < wallInteractionDistance) {
-        agent_fx -= wallSteerStrength;
-    }
-    if (maxPosition - agent_y < wallInteractionDistance) {
-        agent_fy -= wallSteerStrength;
-    }
-
     // Apply the velocity
     const float TIME_SCALE = FLAMEGPU->environment.getProperty<float>("TIME_SCALE");
     agent_x += agent_fx * TIME_SCALE;
     agent_y += agent_fy * TIME_SCALE;
 
-    // Bound position
-    clampPosition(agent_x, agent_y, FLAMEGPU->environment.getProperty<float>("MIN_POSITION"), FLAMEGPU->environment.getProperty<float>("MAX_POSITION"));
+    // Wramp position
+    const float MIN_POSITION = FLAMEGPU->environment.getProperty<float>("MIN_POSITION");
+    const float MAX_POSITION = FLAMEGPU->environment.getProperty<float>("MAX_POSITION");
+    wrapPosition(agent_x, agent_y, MIN_POSITION, MAX_POSITION);
 
     // Update global agent memory.
     FLAMEGPU->setVariable<float>("x", agent_x);
