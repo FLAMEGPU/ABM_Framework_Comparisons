@@ -19,9 +19,9 @@ ws=$(parallel -j8 ::: $(printf './netlogo_forest.sh %.0s' {1..100}) | sort | hea
 echo "NetLogo ForestFire (ms): "$ws
 
 echo "Benchmarking Mesa"
-python Mesa/WolfSheep/benchmark.py
-python Mesa/Flocking/benchmark.py
-python Mesa/Schelling/benchmark.py
-python Mesa/ForestFire/benchmark.py
+python3 Mesa/WolfSheep/benchmark.py
+python3 Mesa/Flocking/benchmark.py
+python3 Mesa/Schelling/benchmark.py
+python3 Mesa/ForestFire/benchmark.py
 
 echo "Mason Benchmarks must be run manually"
