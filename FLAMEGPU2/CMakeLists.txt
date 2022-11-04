@@ -10,9 +10,6 @@ set(FLAMEGPU_VERSION "0f5a4c597560a6991a9a9b33c730fb9fc18622ad" CACHE STRING "FL
 # If the above version is a hash instead, also set FLAMEGPU_VERSION_ALLOW_HASH to ON
 set(FLAMEGPU_VERSION_ALLOW_HASH "ON")
 
-# Define output location of binary files
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}/)
-
 # Find the FLAMEGPU 2 and import it's CMake rules
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/flamegpu2.cmake)
 
@@ -21,6 +18,15 @@ include(${CMAKE_CURRENT_LIST_DIR}/cmake/flamegpu2.cmake)
 
 # Name the project and set languages
 project(schelling CUDA CXX)
+
+# Define output location of binary files
+if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+    # If top level project
+    SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}/)
+else()
+    # If called via add_subdirectory()
+    SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../bin/${CMAKE_BUILD_TYPE}/)
+endif()
 
 # Manually list relevant header and source files
 SET(ALL_SRC
@@ -36,6 +42,15 @@ add_flamegpu_executable("${PROJECT_NAME}" "${ALL_SRC}" "${FLAMEGPU_ROOT}" "${PRO
 
 # Name the project and set languages
 project(boids2D CUDA CXX)
+
+# Define output location of binary files
+if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+    # If top level project
+    SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}/)
+else()
+    # If called via add_subdirectory()
+    SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../bin/${CMAKE_BUILD_TYPE}/)
+endif()
 
 include(${FLAMEGPU_ROOT}/cmake/common.cmake)
 

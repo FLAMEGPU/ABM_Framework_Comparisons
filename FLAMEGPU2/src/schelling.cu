@@ -8,8 +8,10 @@
 #include "flamegpu/flamegpu.h"
 
 // Configurable properties
-unsigned int GRID_WIDTH = 500;
-constexpr float THRESHOLD = 0.70;
+unsigned int GRID_WIDTH = 50;
+unsigned int POPULATED_COUNT = 2000;
+
+constexpr float THRESHOLD = 0.00;
 
 constexpr unsigned int A = 0;
 constexpr unsigned int B = 1;
@@ -48,7 +50,6 @@ FLAMEGPU_AGENT_FUNCTION(determine_status, flamegpu::MessageArray2D, flamegpu::Me
 
     return flamegpu::ALIVE;
 }
-
 FLAMEGPU_AGENT_FUNCTION_CONDITION(is_available) {
     return FLAMEGPU->getVariable<unsigned int>("available");
 }
@@ -80,7 +81,7 @@ FLAMEGPU_AGENT_FUNCTION(bid_for_location, flamegpu::MessageArray, flamegpu::Mess
     FLAMEGPU->message_out.setVariable<unsigned int>("type", FLAMEGPU->getVariable<unsigned int>("type"));
     return flamegpu::ALIVE;
 }
-
+// @todo - device exception triggered when running 
 FLAMEGPU_AGENT_FUNCTION(select_winners, flamegpu::MessageBucket, flamegpu::MessageArray) {
     // First agent in the bucket wins
     for (const auto& message : FLAMEGPU->message_in(FLAMEGPU->getID() - 1)) {
@@ -115,144 +116,124 @@ int main(int argc, const char ** argv) {
     NVTX_RANGE("main");
     NVTX_PUSH("ModelDescription");
 
-    std::ifstream config_file("FLAMEGPU2/benchmark_config.txt");
-    config_file >> GRID_WIDTH;
-    printf("GRID_WIDTH is now %d\n", GRID_WIDTH);
-
+    // Define the model
     flamegpu::ModelDescription model("Schelling_segregation");
 
-    /**
-     * Messages
-     */
-    {
-        {
-            flamegpu::MessageArray2D::Description &message = model.newMessage<flamegpu::MessageArray2D>("type_message");
-            message.newVariable<unsigned int>("type");
-            message.setDimensions(GRID_WIDTH, GRID_WIDTH);
-        }
-    }
+    // Define the message list(s)
+    flamegpu::MessageArray2D::Description &message = model.newMessage<flamegpu::MessageArray2D>("type_message");
+    message.newVariable<unsigned int>("type");
+    message.setDimensions(GRID_WIDTH, GRID_WIDTH);
 
-    /**
-     * Agents
-     */
-    {   // Per cell agent
-        flamegpu::AgentDescription  &agent = model.newAgent("agent");
+    // Define the agent types
+    // Agents representing the cells.
+    flamegpu::AgentDescription  &agent = model.newAgent("agent");
+    agent.newVariable<unsigned int, 2>("pos");
+    agent.newVariable<unsigned int>("type");
+    agent.newVariable<unsigned int>("next_type");
+    agent.newVariable<unsigned int>("happy");
+    agent.newVariable<unsigned int>("available");
+    agent.newVariable<unsigned int>("movement_resolved");
+#ifdef VISUALISATION
+    // Redundant seperate floating point position vars for vis
+    agent.newVariable<float>("x");
+    agent.newVariable<float>("y");
+#endif
+    // Functions
+    agent.newFunction("output_type", output_type).setMessageOutput("type_message");
+    agent.newFunction("determine_status", determine_status).setMessageInput("type_message");
+    agent.newFunction("update_locations", update_locations);
+
+
+    // Define a submodel for conflict resolution for agent movement
+    // This is neccesary for parlalel random movement of agents, to resolve conflict between agents moveing to the same location
+    flamegpu::ModelDescription submodel("plan_movement");
+    // Submodels require an exit condition function, so they do not run forever
+    submodel.addExitCondition(movement_resolved);
+    {
+        // Define the submodel environemnt
+        flamegpu::EnvironmentDescription& env = submodel.Environment();
+        env.newProperty<unsigned int>("spaces_available", 0);
+
+        // Define message lists used within the submodel
+        {
+            flamegpu::MessageArray::Description &message = submodel.newMessage<flamegpu::MessageArray>("available_location_message");
+            message.newVariable<flamegpu::id_t>("id");
+            message.setLength(GRID_WIDTH*GRID_WIDTH);
+        }
+        {
+            flamegpu::MessageBucket::Description &message = submodel.newMessage<flamegpu::MessageBucket>("intent_to_move_message");
+            message.newVariable<flamegpu::id_t>("id");
+            message.newVariable<unsigned int>("type");
+            message.setBounds(0, GRID_WIDTH * GRID_WIDTH);
+        }
+        {
+            flamegpu::MessageArray::Description &message = submodel.newMessage<flamegpu::MessageArray>("movement_won_message");
+            message.newVariable<unsigned int>("won");
+            message.setLength(GRID_WIDTH*GRID_WIDTH);
+        }
+
+        // Define agents within the submodel
+        flamegpu::AgentDescription  &agent = submodel.newAgent("agent");
         agent.newVariable<unsigned int, 2>("pos");
         agent.newVariable<unsigned int>("type");
         agent.newVariable<unsigned int>("next_type");
         agent.newVariable<unsigned int>("happy");
         agent.newVariable<unsigned int>("available");
         agent.newVariable<unsigned int>("movement_resolved");
-#ifdef VISUALISATION
-        // Redundant seperate floating point position vars for vis
-        agent.newVariable<float>("x");
-        agent.newVariable<float>("y");
-#endif
+
         // Functions
-        agent.newFunction("output_type", output_type).setMessageOutput("type_message");
-        agent.newFunction("determine_status", determine_status).setMessageInput("type_message");
-        agent.newFunction("update_locations", update_locations);
-    }
+        auto& outputLocationsFunction = agent.newFunction("output_available_locations", output_available_locations);
+        outputLocationsFunction.setMessageOutput("available_location_message");
+        outputLocationsFunction.setFunctionCondition(is_available);
 
-    /**
-     * Movement resolution submodel
-     */
+        auto& bidFunction = agent.newFunction("bid_for_location", bid_for_location);
+        bidFunction.setFunctionCondition(is_moving);
+        bidFunction.setMessageInput("available_location_message");
+        bidFunction.setMessageOutput("intent_to_move_message");
 
-    flamegpu::ModelDescription submodel("plan_movement");
-    submodel.addExitCondition(movement_resolved);
-    {
-        // Environment
+        auto& selectWinnersFunction = agent.newFunction("select_winners", select_winners);
+        selectWinnersFunction.setMessageInput("intent_to_move_message");
+        selectWinnersFunction.setMessageOutput("movement_won_message");
+        selectWinnersFunction.setMessageOutputOptional(true);
+
+        agent.newFunction("has_moved", has_moved).setMessageInput("movement_won_message");
+
+        // Specify control flow for the submodel (@todo - dependencies)
+        // Available agents output their location (indexed by thread ID)
         {
-            flamegpu::EnvironmentDescription& env = submodel.Environment();
-            env.newProperty<unsigned int>("spaces_available", 0);
+            flamegpu::LayerDescription &layer = submodel.newLayer();
+            layer.addAgentFunction(output_available_locations);
         }
-
-        // Message types
+        // Count the number of available spaces
         {
-            {
-                flamegpu::MessageArray::Description &message = submodel.newMessage<flamegpu::MessageArray>("available_location_message");
-                message.newVariable<flamegpu::id_t>("id");
-                message.setLength(GRID_WIDTH*GRID_WIDTH);
-            }
-            {
-                flamegpu::MessageBucket::Description &message = submodel.newMessage<flamegpu::MessageBucket>("intent_to_move_message");
-                message.newVariable<flamegpu::id_t>("id");
-                message.newVariable<unsigned int>("type");
-                message.setBounds(0, GRID_WIDTH * GRID_WIDTH);
-            }
-            {
-                flamegpu::MessageArray::Description &message = submodel.newMessage<flamegpu::MessageArray>("movement_won_message");
-                message.newVariable<unsigned int>("won");
-                message.setLength(GRID_WIDTH*GRID_WIDTH);
-            }
+            flamegpu::LayerDescription &layer = submodel.newLayer();
+            layer.addHostFunction(count_available_spaces);
         }
-
-        // Agent types
+        // Unhappy agents bid for a new location
         {
-            flamegpu::AgentDescription  &agent = submodel.newAgent("agent");
-            agent.newVariable<unsigned int, 2>("pos");
-            agent.newVariable<unsigned int>("type");
-            agent.newVariable<unsigned int>("next_type");
-            agent.newVariable<unsigned int>("happy");
-            agent.newVariable<unsigned int>("available");
-            agent.newVariable<unsigned int>("movement_resolved");
-
-            // Functions
-            auto& outputLocationsFunction = agent.newFunction("output_available_locations", output_available_locations);
-            outputLocationsFunction.setMessageOutput("available_location_message");
-            outputLocationsFunction.setFunctionCondition(is_available);
-
-            auto& bidFunction = agent.newFunction("bid_for_location", bid_for_location);
-            bidFunction.setFunctionCondition(is_moving);
-            bidFunction.setMessageInput("available_location_message");
-            bidFunction.setMessageOutput("intent_to_move_message");
-
-            auto& selectWinnersFunction = agent.newFunction("select_winners", select_winners);
-            selectWinnersFunction.setMessageInput("intent_to_move_message");
-            selectWinnersFunction.setMessageOutput("movement_won_message");
-            selectWinnersFunction.setMessageOutputOptional(true);
-
-            agent.newFunction("has_moved", has_moved).setMessageInput("movement_won_message");
+            flamegpu::LayerDescription &layer = submodel.newLayer();
+            layer.addAgentFunction(bid_for_location);
         }
-        // Control flow
+        // Available locations check if anyone wants to move to them. If so, approve one and mark as unavailable
+        // Update next type to the type of the mover
+        // Output a message to inform the mover that they have been successful
         {
-            // Available agents output their location (indexed by thread ID)
-            {
-                flamegpu::LayerDescription &layer = submodel.newLayer();
-                layer.addAgentFunction(output_available_locations);
-            }
-            // Count the number of available spaces
-            {
-                flamegpu::LayerDescription &layer = submodel.newLayer();
-                layer.addHostFunction(count_available_spaces);
-            }
-            // Unhappy agents bid for a new location
-            {
-                flamegpu::LayerDescription &layer = submodel.newLayer();
-                layer.addAgentFunction(bid_for_location);
-            }
-            // Available locations check if anyone wants to move to them. If so, approve one and mark as unavailable
-            // Update next type to the type of the mover
-            // Output a message to inform the mover that they have been successful
-            {
-                flamegpu::LayerDescription &layer = submodel.newLayer();
-                layer.addAgentFunction(select_winners);
-            }
-            // Movers mark themselves as resolved
-            {
-                flamegpu::LayerDescription &layer = submodel.newLayer();
-                layer.addAgentFunction(has_moved);
-            }
+            flamegpu::LayerDescription &layer = submodel.newLayer();
+            layer.addAgentFunction(select_winners);
+        }
+        // Movers mark themselves as resolved
+        {
+            flamegpu::LayerDescription &layer = submodel.newLayer();
+            layer.addAgentFunction(has_moved);
         }
     }
+
+    // Attach the submodel to the model, 
     flamegpu::SubModelDescription& plan_movement = model.newSubModel("plan_movement", submodel);
-    {
-        plan_movement.bindAgent("agent", "agent", true, true);
-    }
+    // Bind the agents within the submodel to the same agents outside of the submodel
+    plan_movement.bindAgent("agent", "agent", true, true);
 
-    /**
-     * Control flow
-     */
+    // Defien the control flow of the outer/parent model (@todo - use dependencies)
     {   // Layer #1
         flamegpu::LayerDescription  &layer = model.newLayer();
         layer.addAgentFunction(output_type);
@@ -273,18 +254,14 @@ int main(int argc, const char ** argv) {
         flamegpu::LayerDescription  &layer = model.newLayer();
         layer.addAgentFunction(determine_status);
     }
-
-
     NVTX_POP();
 
-    /**
-     * Create Model Runner
-     */
-    NVTX_PUSH("CUDAAgentModel creation");
-    flamegpu::CUDASimulation  cudaSimulation(model);
+    // Create the simulator for the model
+    NVTX_PUSH("CUDASimulation creation");
+    flamegpu::CUDASimulation cudaSimulation(model);
     NVTX_POP();
 
-    /**
+    /*
      * Create visualisation
      * @note FLAMEGPU2 doesn't currently have proper support for discrete/2d visualisations
      */
@@ -309,58 +286,63 @@ int main(int argc, const char ** argv) {
     visualisation.activate();
 #endif
 
-    /**
-     * Initialisation
-     */
-    NVTX_PUSH("CUDAAgentModel initialisation");
+    // Initialise the simulation
+    NVTX_PUSH("CUDASimulation initialisation");
     cudaSimulation.initialise(argc, argv);
-    if (cudaSimulation.getSimulationConfig().input_file.empty()) {
-        std::default_random_engine rng;
 
-        // Currently population has not been init, so generate an agent population on the fly
+    // Generate a population if not provided from disk
+    if (cudaSimulation.getSimulationConfig().input_file.empty()) {
+        // Use a seeded mt19937 generator
+        std::mt19937_64 rng(cudaSimulation.getSimulationConfig().random_seed);
+        // use a uniform generator to determine the initial group of an indivudal
+        std::uniform_real_distribution<float> uniformDist(0, 1);
+        // Calcualte the total number of cells
         const unsigned int CELL_COUNT = GRID_WIDTH * GRID_WIDTH;
-        std::uniform_real_distribution<float> normal(0, 1);
-        unsigned int i = 0;
-        flamegpu::AgentVector init_pop(model.Agent("agent"), CELL_COUNT);
-        for (unsigned int x = 0; x < GRID_WIDTH; ++x) {
-            for (unsigned int y = 0; y < GRID_WIDTH; ++y) {
-                flamegpu::AgentVector::Agent instance = init_pop[i++];
-                instance.setVariable<unsigned int, 2>("pos", { x, y });
-                // Will this cell be occupied
-                if (normal(rng) < 0.8) {
-                    unsigned int type = normal(rng) < 0.5 ? A : B;
-                    instance.setVariable<unsigned int>("type", type);
-                    instance.setVariable<unsigned int>("happy", 0);
-                } else {
-                    instance.setVariable<unsigned int>("type", UNOCCUPIED);
-                }
-#ifdef VISUALISATION
-                // Redundant separate floating point position vars for vis
-                instance.setVariable<float>("x", static_cast<float>(x));
-                instance.setVariable<float>("y", static_cast<float>(y));
-#endif
+        // Generate a population of agents, which are just default initialised for now
+        flamegpu::AgentVector population(model.Agent("agent"), CELL_COUNT);
+
+        // Select POPULATED_COUNT unique random integers in the range [0, CELL_COUNT), by shuffling the iota.
+        std::vector<unsigned int> shuffledIota(CELL_COUNT);
+        std::iota(shuffledIota.begin(), shuffledIota.end(), 0);
+        std::shuffle(shuffledIota.begin(), shuffledIota.end(), rng);
+
+        // Then iterate the shuffled iota, the first POPULATED_COUNT agents will randomly select a type/group. The remaining agents will not. 
+        // The agent index provides the X and Y coordinate for the position.
+        for (unsigned int elementIdx = 0; elementIdx < shuffledIota.size(); elementIdx++) {
+            unsigned int idx = shuffledIota[elementIdx];
+            flamegpu::AgentVector::Agent instance = population[idx];
+            // the position can be computed from the index, given the width.
+            unsigned int x = idx % GRID_WIDTH;
+            unsigned int y = idx / GRID_WIDTH;
+            instance.setVariable<unsigned int, 2>("pos", { x, y });
+
+            // If the elementIDX is below the populated count, generated a populated type, otherwise it is unoccupied
+            if (elementIdx < POPULATED_COUNT) {
+                unsigned int type = uniformDist(rng) < 0.5 ? A : B;
+                instance.setVariable<unsigned int>("type", type);
+            } else {
+                instance.setVariable<unsigned int>("type", UNOCCUPIED);
             }
+            instance.setVariable<unsigned int>("happy", 0);
+#ifdef VISUALISATION
+            // Redundant separate floating point position vars for vis
+            instance.setVariable<float>("x", static_cast<float>(x));
+            instance.setVariable<float>("y", static_cast<float>(y));
+#endif
         }
-        cudaSimulation.setPopulationData(init_pop);
+        cudaSimulation.setPopulationData(population);
     }
     NVTX_POP();
 
-    /**
-     * Execution
-     */
-    
+    // Run the simulation    
     cudaSimulation.simulate();
 
     // Print the exeuction time to stdout
     fprintf(stdout, "Elapsed (s): %.6f\n", cudaSimulation.getElapsedTimeSimulation());
 
-    /**
-     * Export Pop
-     */
-    // cudaSimulation.exportData("end.xml");
-
 #ifdef VISUALISATION
     visualisation.join();
 #endif
-    return 0;
+
+    return EXIT_SUCCESS;
 }

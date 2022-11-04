@@ -13,7 +13,6 @@ import math
 SCRIPT_PATH = pathlib.Path(__file__).parent
 BUILD_DIR = "build"
 CONFIG = "Release"
-STEPS = 100
 REPETITIONS = 100
 ELAPSED_RE = re.compile("^(Elapsed \(s\): ([0-9]+(\.[0-9]+)?))$")
 
@@ -23,7 +22,7 @@ if flocking_binary_path.is_file():
     times = []
     for i in range(0, REPETITIONS):
         t = math.nan
-        result = subprocess.run([str(flocking_binary_path), "-s", f"{STEPS}"], stdout=subprocess.PIPE)
+        result = subprocess.run([str(flocking_binary_path), "-s", "100"], stdout=subprocess.PIPE)
         # @todo make this less brittle
         lines = result.stdout.decode('utf-8').splitlines()
         match = ELAPSED_RE.match(lines[-1].strip())
@@ -42,7 +41,7 @@ if flocking_binary_path.is_file():
     times = []
     for i in range(0, REPETITIONS):
         t = math.nan
-        result = subprocess.run([str(schelling_binary_path), "-s", f"{STEPS}"], stdout=subprocess.PIPE)
+        result = subprocess.run([str(schelling_binary_path), "-s", "10"], stdout=subprocess.PIPE)
         # @todo make this less brittle
         lines = result.stdout.decode('utf-8').splitlines()
         match = ELAPSED_RE.match(lines[-1].strip())
