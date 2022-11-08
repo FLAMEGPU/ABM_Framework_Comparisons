@@ -26,7 +26,7 @@ RUN set -eux; \
 	apt-get install -y --no-install-recommends \
 		ca-certificates \
 		curl \
-        moreutils \
+        parallel \
         python3 \
         python3-pip \
 	; \
