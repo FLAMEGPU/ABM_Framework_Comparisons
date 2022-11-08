@@ -1,48 +1,48 @@
 # Benchmarks and comparisons of leading ABM frameworks and Agents.jl
 
-> @todo - re-spin the intro for F2, but based on Agents.jl's Repo (with a link?).
-> @todo - Mark that ForestFire and WolfSheepGrass are currently disabled from runall.
-
 Many agent-based modeling frameworks have been constructed to ease the process of building and analyzing ABMs (see [here](http://dx.doi.org/10.1016/j.cosrev.2017.03.001) for a review).
 Notable examples are [NetLogo](https://ccl.northwestern.edu/netlogo/), [Repast](https://repast.github.io/index.html), [MASON](https://journals.sagepub.com/doi/10.1177/0037549705058073), [Mesa](https://github.com/projectmesa/mesa) and [FLAMEGPU2](https://github.com/FLAMEGPU/FLAMEGPU2).
 
-This repository contains examples to compare [Agents.jl](https://github.com/JuliaDynamics/Agents.jl) with Mesa, Netlogo, Mason and FLAMEGPU2, to assess where Agents.jl excels and also may need some future improvement.
+This repository contains examples to compare the perfromance of muliple ABM Frameworks including:
+
++ [FLAMEGPU2](https://github.com/FLAMEGPU/FLAMEGPU2)
++ [Agents.jl](https://github.com/JuliaDynamics/Agents.jl)
++ [Mesa](https://github.com/projectmesa/mesa)
++ [Netlogo](https://ccl.northwestern.edu/netlogo/)
+<!-- + [Mason](https://cs.gmu.edu/~eclab/projects/mason/) -->
+
+Based on / Forked from [https://github.com/JuliaDynamics/](https://github.com/JuliaDynamics/ABM_Framework_Comparisons)
+
 We used the following models for the comparison:
 
-- **Wolf Sheep Grass**, a `GridSpace` model, which requires agents to be added, removed and moved; as well as identify properties of neighbouring positions.
+<!-- - **Wolf Sheep Grass**, a `GridSpace` model, which requires agents to be added, removed and moved; as well as identify properties of neighbouring positions. -->
 - **Flocking**, a `ContinuousSpace` model, chosen over other models to include a MASON benchmark. Agents must move in accordance with social rules over the space.
-- **Forest fire**, provides comparisons for cellular automata type ABMs (i.e. when agents do not move and every location in space contains exactly one agent). NOTE: The Agents.jl implementation of this model has been changed in v4.0 to be directly comparable to Mesa and NetLogo. As a consequence it no longer follows the [original rule-set](https://en.wikipedia.org/wiki/Forest-fire_model).
+<!-- - **Forest fire**, provides comparisons for cellular automata type ABMs (i.e. when agents do not move and every location in space contains exactly one agent). NOTE: The Agents.jl implementation of this model has been changed in v4.0 to be directly comparable to Mesa and NetLogo. As a consequence it no longer follows the [original rule-set](https://en.wikipedia.org/wiki/Forest-fire_model). -->
 - **Schelling's-segregation-model**, an additional `GridSpace` model to compare with MASON. Simpler rules than Wolf Sheep Grass.
 
-## Contributions from other Frameworks
+## Status
 
-We welcome improvements from other framework contributors, either with new code that beats the implementation provided here with updated improvements from your framework's development process.
+Currently several simulators are not being compared due to container issues, several models have been disabled while implementations are not present, and other planned improvements are neccesary.
 
-Frameworks not included in the comparison are invited to provide code for the above, standardised comparison models.
-
-All are welcome to suggest better 'standard candle' models to test framework capability.
++ [ ] Julia's Agents.jl is disabled from `run-all.sh` and not in the container, due to containerisation issues
++ [ ] Mason is not present in `runall.sh` (as in the upstream [https://github.com/JuliaDynamics/](https://github.com/JuliaDynamics/ABM_Framework_Comparisons))
++ [ ] Wolf Sheep Grass is not in `runall.sh` as FLAMEGPU2 implementation is missing
++ [ ] Forest Fire is not in `runall.sh` as FLAMEGPU2 implementation is missing
++ [ ] FLAMEGPU 2 binaries must be compiled in the local filesystem rather than packaged into a container
++ [ ] Version pinning for reproducibility is incomplete / not ideal.
++ [ ] Benchmarking is at a single scale
++ [ ] Benchmarking uses the minimum runtime of N repetitions, discarding other values
++ [ ] Simulations are not (all) seeded for reproducibility for stochastic initialisation
+  + Different implementations use different PRNG, so the same seed will not produce the same simulation
++ [ ] Multi-stage docker build with a development and runtime image would improve file size and portability (with an entrypoint to `runall.sh`)
++ [ ] Need to check models all use the same parameters (or equivalent in normalised space) for a fairer comparison
++ [ ] Provide a smaller dockerfile not based on a CUDA dockerfile for non-GPU benchmarking.
++ [ ] Repast4Py would be a good addition.
++ [ ] FLAMEGPU2's python interface may simplify thigns.
 
 ## Containers
 
-### Todo
-
-+ [ ] Mason
-+ [ ] Version pinning
-+ [ ] Multiple containers
-+ [ ] Build flamegpu2 binaries into the/a container? for atelast a minimum arch
-+ [ ] Improved benchmarking behaviour
-  + [ ] Scale
-  + [ ] Repetitions / seed usage
-  + [ ] Report more than just the minimum timing
-+ [ ] Improved runscript
-  + [ ] Simplify execution of individual benchmarks, e.g. run schelling on all simulators, or run boids on mason and flamegpu.
-  + [ ] 
-+ [ ] Use mulitple dockerfiles to support benchmarking without FLAME GPU
-+ [ ] Use multi-stage dockerfiles to build a separate, lighter runtime container with an entry point to run the benchmarks
-+ [ ] Check simualtors use the same parameters (boids depends on if space is normalised or not)
-+ [ ] Add note that F2 only has Flocking and Schellings. Remove the others from runall for now?
-+ [ ] Seeding: some simulations are seeded, others are not...
----
+To simplify reproduction of the benchmarks, a Dockerfile is provided which installs dependencies into a container, which can be used to execute the benchmarks
 
 The included dockerfile can be used to create a container with the build/runtime dependencies required for running this benchmark.
 Alternatively, a singularity container can be generated from the Dockerfile if required.
@@ -114,7 +114,7 @@ Note the generated binaries may not be compatible with your host system.
 
 Running the existing `runall.sh`
 
-> Note: This does not run MASON
+> Note: This does not currently run all simulators or all models which source is included in this repository for.
 
 ```bash
 # docker
@@ -143,14 +143,15 @@ apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif 
 apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif bash -c "python3 Mesa/ForestFire/benchmark.py"
 ```
 
-#### Agents.jl
+<!-- #### Agents.jl
 
 ```bash
-sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons bash -c 
+sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons bash -c "julia --project=@. Agents/benchmark.jl"
 ```
+
 ```bash
-apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif bash -c 
-```
+apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif bash -c "julia --project=@. Agents/benchmark.jl"
+``` -->
 
 #### FLAMEGPU2
 
@@ -168,9 +169,9 @@ apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif 
 apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif bash -c "./FLAMEGPU2/build/bin/Release/schelling -s 100 -t"
 ```
 
-#### Mason
+<!-- #### Mason
 
-Mason runs are not currently supported/tested via the container.
+Mason runs are not currently supported/tested via the container. -->
 
 #### NetLogo
 

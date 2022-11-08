@@ -1,13 +1,12 @@
 # Dockerfile to support portable execution of the ABM benchmarks, including FLAME GPU 2, hence using the CUDA base image.
 
-# @todo - use a multi-stage build to compile the benchmarks into a final image which can simply be invoked to run the full set of benchmarks. This can use a non-devel cuda base image to shrink the file size. 
-# @todo - gpg & sha validation of remote downloads.
-# @todo - flag the secitosn of this which are arch specific, i.e. precompiled binaries may be linux/amd64 only.
-# @todo - install specific versions of packages as required (e.g. mesa). It is not clear which versions these are currently. I.e. add a requiremetns.txt for mesa. At the very least document it.
+# @todo - Multi-stage dockerfile, to separate build and runtime dependencies, creating a lighter runtime container
+# @todo - gpg & sha validation of remote downloads + version pinning
 
+# Must use an nvidia/cuda base image for libcuda.so redistribution
 FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
 
-# For now, abort for non-x86 arch's just incase, as uri's are baked for x86
+# Only support building for x86_64 CPU arch, as arch specific precompiled binaries are downloaded
 RUN set -eux; \
     arch="$(dpkg --print-architecture)"; \
     case "$arch" in \
@@ -20,7 +19,11 @@ RUN set -eux; \
         ;; \
     esac;
 
-# Update apt, install some general dependencies
+# Create a new non-root user, to allow some commands to not be executed as root
+RUN groupadd -r bench && useradd --shell /bin/bash --create-home --no-log-init -r -g bench bench
+
+# Update apt, install general / common dependencies.
+# Doing this once makes it a little harder to split some aspects, but should improve build time by not attempting to reinstall python3 multiple times
 RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
@@ -29,6 +32,7 @@ RUN set -eux; \
         parallel \
         python3 \
         python3-pip \
+        python3-venv \
 	; \
 	rm -rf /var/lib/apt/lists/*
 
@@ -40,27 +44,26 @@ RUN set -eux; \
 		cmake \
         swig4.0 \
         git \
-        python3 python3-pip python3-venv \
 	; \
-    python3 -m pip install wheel setuptools build matplotlib ; \
 	rm -rf /var/lib/apt/lists/*; \
-    gcc --version; \ 
+    gcc --version; \
     nvcc --version; \
     cmake --version
 
-# Install Dependencies for Agents.jl
-ENV JULIA_PATH /opt/julia
-ENV PATH $JULIA_PATH/bin:$PATH
-# @todo - check sha. Check gpg? 
-RUN set -eux; \
-    curl -fL -o julia.tar.gz "https://julialang-s3.julialang.org/bin/linux/x64/1.8/julia-1.8.2-linux-x86_64.tar.gz"; \
-    mkdir -p ${JULIA_PATH}; \
-    tar -xzf julia.tar.gz -C ${JULIA_PATH} --strip-components 1; \
-    rm -rf julia.tar.gz; \
-    julia --version
+# (disabled for now) Install Dependencies for Agents.jl
+# ENV JULIA_VERSION_FULL 1.8.2
+# ENV JULIA_VERSION_MM 1.8
+# ENV JULIA_PATH /opt/julia
+# ENV PATH $JULIA_PATH/bin:$PATH
+# RUN set -eux; \
+#     curl -fL -o julia.tar.gz "https://julialang-s3.julialang.org/bin/linux/x64/${JULIA_VERSION_MM}/julia-${JULIA_VERSION_FULL}-linux-x86_64.tar.gz"; \
+#     mkdir -p ${JULIA_PATH}; \
+#     tar -xzf julia.tar.gz -C ${JULIA_PATH} --strip-components 1; \
+#     rm -rf julia.tar.gz; \
+#     julia --version
 
 # Install Dependencies for NetLogo
-# @todo - check sha? Though they are not provided...
+ENV NETLOGO_VERSION_FULL 6.3.0
 ENV NETLOGO_PATH /opt/netlogo
 ENV PATH $NETLOGO_PATH/bin:$PATH
 RUN set -eux; \
@@ -69,14 +72,14 @@ RUN set -eux; \
 		default-jre \
 	; \
 	rm -rf /var/lib/apt/lists/*; \
-    curl -fL -o netlogo.tgz "https://ccl.northwestern.edu/netlogo/6.3.0/NetLogo-6.3.0-64.tgz"; \
+    curl -fL -o netlogo.tgz "https://ccl.northwestern.edu/netlogo/${NETLOGO_VERSION_FULL}/NetLogo-${NETLOGO_VERSION_FULL}-64.tgz"; \
     mkdir -p ${NETLOGO_PATH}; \
     tar -xzf netlogo.tgz -C ${NETLOGO_PATH} --strip-components 1; \
     rm -rf netlogo.tgz; \
     JAVA_HOME=/usr ${NETLOGO_PATH}/netlogo-headless.sh --version
 
-# # Install Dependecies for Mason 
-# # https://cs.gmu.edu/~eclab/projbects/mason/mason.20.jar
+# (disabled for now) Install Dependecies for Mason
+# ENV MASON_VERSION 20
 # ENV MASON_PATH /opt/mason
 # ENV PATH $MASON_PATH/bin:$PATH
 # RUN set -eux; \
@@ -85,20 +88,28 @@ RUN set -eux; \
 # 		default-jre \
 # 	; \
 #     rm -rf /var/lib/apt/lists/*; \
-#     curl -fL -o mason.jar "https://cs.gmu.edu/~eclab/projbects/mason/mason.20.jar"; \
+#     curl -fL -o mason.jar "https://cs.gmu.edu/~eclab/projbects/mason/mason.${MASON_VERSION}.jar"; \
 #     mkdir -p ${MASON_PATH}; \
 #     tar -xzf mason.jar -C ${MASON_PATH} --strip-components 1; \
 #     rm -rf mason.jar; \
 
+# Switch to the non-root users to avoid pip warnings
+USER bench
+WORKDIR /home/bench
+ENV PATH "$PATH:/home/bench/.local/bin/"
 
-# Install Dependencies for Mesa
-# @todo - add a user (or otherworkaround to avoid the pip running usera s root error.)
-# @todo - pin versions for reproducibililty / move to a requirment.txt?
+# Install Mesa python package packages ependencies for Mesa
+ENV MESA_VERSION 1.0
 RUN set -eux; \
-	apt-get update; \
-	apt-get install -y --no-install-recommends \
-		python3 python3-pip \
-	; \
-	python3 -m pip install mesa==1.0; \
+	python3 -m pip install mesa==${MESA_VERSION}; \
     python3 -c "import mesa; print(mesa.__version__)"
 
+
+# (Failed attempt to) Install Julia packages from project.toml into the container
+# COPY Project.toml .
+# ENV JULIA_DEPOT_PATH "/home/bench/depot"
+# # Install Julia packages as required by Project.toml?
+# RUN set -eux; \
+#     pwd; \
+#     ls; \
+#     julia -e 'using Pkg; Pkg.activate("."); Pkg.instantiate();'
