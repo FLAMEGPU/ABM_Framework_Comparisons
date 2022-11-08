@@ -130,10 +130,10 @@ If you do not wish to run the full benchmark suite in one go, individual executi
 #### Mesa
 
 ```bash
-sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons -c bash "python3 Mesa/WolfSheep/benchmark.py"
-sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons -c bash -c "python3 Mesa/Flocking/benchmark.py"
-sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons -c bash -c "python3 Mesa/Schelling/benchmark.py"
-sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons -c bash -c "python3 Mesa/ForestFire/benchmark.py"
+sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons bash -c "python3 Mesa/WolfSheep/benchmark.py"
+sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons bash -c "python3 Mesa/Flocking/benchmark.py"
+sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons bash -c "python3 Mesa/Schelling/benchmark.py"
+sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons bash -c "python3 Mesa/ForestFire/benchmark.py"
 ```
 
 ```bash
