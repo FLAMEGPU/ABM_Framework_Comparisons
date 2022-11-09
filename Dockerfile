@@ -94,9 +94,9 @@ RUN set -eux; \
 #     rm -rf mason.jar; \
 
 # Switch to the non-root users to avoid pip warnings
-USER bench
-WORKDIR /home/bench
-ENV PATH "$PATH:/home/bench/.local/bin/"
+# USER bench
+# WORKDIR /home/bench
+# ENV PATH "$PATH:/home/bench/.local/bin/"
 
 # Install Mesa python package packages ependencies for Mesa
 ENV MESA_VERSION 1.0
