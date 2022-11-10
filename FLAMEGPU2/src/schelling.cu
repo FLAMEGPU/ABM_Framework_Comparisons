@@ -8,10 +8,10 @@
 #include "flamegpu/flamegpu.h"
 
 // Configurable properties
-unsigned int GRID_WIDTH = 50;
-unsigned int POPULATED_COUNT = 2000;
+unsigned int GRID_WIDTH = 4;
+unsigned int POPULATED_COUNT = 2;
 
-constexpr float THRESHOLD = 0.00;
+constexpr float THRESHOLD = -0.01;
 
 constexpr unsigned int A = 0;
 constexpr unsigned int B = 1;
@@ -79,22 +79,30 @@ FLAMEGPU_AGENT_FUNCTION(bid_for_location, flamegpu::MessageArray, flamegpu::Mess
     FLAMEGPU->message_out.setKey(selected_location - 1);
     FLAMEGPU->message_out.setVariable<flamegpu::id_t>("id", FLAMEGPU->getID());
     FLAMEGPU->message_out.setVariable<unsigned int>("type", FLAMEGPU->getVariable<unsigned int>("type"));
+    printf("bid a %u: sel-1 %u\n", FLAMEGPU->getID(), selected_location);
+
     return flamegpu::ALIVE;
 }
 // @todo - device exception triggered when running 
 FLAMEGPU_AGENT_FUNCTION(select_winners, flamegpu::MessageBucket, flamegpu::MessageArray) {
     // First agent in the bucket wins
-    for (const auto& message : FLAMEGPU->message_in(FLAMEGPU->getID() - 1)) {
+    auto filter = FLAMEGPU->message_in(FLAMEGPU->getID() - 1) ;    
+    // for (const auto& message : FLAMEGPU->message_in(FLAMEGPU->getID() - 1)) {
+    if(filter.size() > 0) {
+        const auto& message = *filter.begin();
         flamegpu::id_t winning_id = message.getVariable<flamegpu::id_t>("id");
         FLAMEGPU->setVariable<unsigned int>("next_type", message.getVariable<unsigned int>("type"));
+        printf("select a %u: bin %u messages %u winner %u\n", FLAMEGPU->getID(), FLAMEGPU->getID() - 1, filter.size(), winning_id);
+
         FLAMEGPU->setVariable<unsigned int>("available", 0);
         FLAMEGPU->message_out.setIndex(winning_id - 1);
         FLAMEGPU->message_out.setVariable<unsigned int>("won", 1);
-        break;
+        // break;
     }
     return flamegpu::ALIVE;
 }
 
+// @todo do not use ID for message locations. Correclty compute it from the X/Y position.
 FLAMEGPU_AGENT_FUNCTION(has_moved, flamegpu::MessageArray, flamegpu::MessageNone) {
     const auto& message = FLAMEGPU->message_in.at(FLAMEGPU->getID() - 1);
     if (message.getVariable<unsigned int>("won")) {
