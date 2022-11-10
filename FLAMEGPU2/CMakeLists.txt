@@ -6,7 +6,8 @@ option(VISUALISATION "Enable visualisation support" OFF)
 
 # Optionaly set the version of flamegpu which should be used.
 # Use a branch name such as `master`, or a tagged version such as `v2.0.0-alpha`
-set(FLAMEGPU_VERSION "0f5a4c597560a6991a9a9b33c730fb9fc18622ad" CACHE STRING "FLAMEGPU/FLAMEGPU2 git branch or tag to use")
+# @todo - DO NOT MERGE THIS VERSION, THIS HASH WILL DISSAPEAR
+set(FLAMEGPU_VERSION "10213d5dac58cf238fae0b28a51f10b8085df106" CACHE STRING "FLAMEGPU/FLAMEGPU2 git branch or tag to use")
 # If the above version is a hash instead, also set FLAMEGPU_VERSION_ALLOW_HASH to ON
 set(FLAMEGPU_VERSION_ALLOW_HASH "ON")
 
