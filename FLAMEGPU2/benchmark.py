@@ -13,7 +13,7 @@ import math
 SCRIPT_PATH = pathlib.Path(__file__).parent
 BUILD_DIR = "build"
 CONFIG = "Release"
-REPETITIONS = 100
+REPETITIONS = 10
 ELAPSED_RE = re.compile("^(Elapsed \(s\): ([0-9]+(\.[0-9]+)?))$")
 
 # Benchmark flocking
