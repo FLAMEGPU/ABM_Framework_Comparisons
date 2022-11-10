@@ -70,7 +70,7 @@ if flocking_binary_path.is_file():
     main_times = []
     sim_times = []
     for i in range(0, REPETITIONS):
-        result = subprocess.run([str(flocking_binary_path), "-s", "100"], stdout=subprocess.PIPE)
+        result = subprocess.run([str(schelling_binary_path), "-s", "10"], stdout=subprocess.PIPE)
         # @todo make this less brittle
         lines = result.stdout.decode('utf-8').splitlines()
         main_time, sim_time = extract_times(lines)
