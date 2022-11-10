@@ -11,7 +11,7 @@ import re
 import math
 
 SCRIPT_PATH = pathlib.Path(__file__).parent
-BUILD_DIR = "build-local"
+BUILD_DIR = "build"
 CONFIG = "Release"
 REPETITIONS = 10
 
