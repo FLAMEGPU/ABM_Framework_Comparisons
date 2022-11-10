@@ -11,7 +11,7 @@
 unsigned int GRID_WIDTH = 50;
 unsigned int POPULATED_COUNT = 2000;
 
-constexpr float THRESHOLD = 0.00;
+constexpr float THRESHOLD = 0.30;
 
 constexpr unsigned int A = 0;
 constexpr unsigned int B = 1;
