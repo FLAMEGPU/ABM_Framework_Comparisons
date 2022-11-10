@@ -8,8 +8,8 @@
 #include "flamegpu/flamegpu.h"
 
 // Configurable properties
-unsigned int GRID_WIDTH = 50;
-unsigned int POPULATED_COUNT = 2000;
+unsigned int GRID_WIDTH = 150;
+unsigned int POPULATED_COUNT = 18000;
 
 constexpr float THRESHOLD = 0.30;
 

@@ -17,10 +17,15 @@ def runthemodel(flock):
       flock.step()
 
 
-flock = BoidFlockers()
+flock = BoidFlockers(
+  population=30000,
+  width=100,
+  height=100
+)
 """
 
 tt = timeit.Timer('runthemodel(flock)', setup=setup)
-a = min(tt.repeat(100, 1))
+SAMPLES=10
+a = (sum(tt.repeat(SAMPLES, 1)))/SAMPLES
 print("Mesa Flocking (ms):", a*1e3)
 

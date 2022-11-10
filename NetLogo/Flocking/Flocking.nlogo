@@ -21,6 +21,7 @@ to setup
       setxy random-xcor random-ycor
       set flockmates no-turtles ]
   reset-ticks
+  print count turtles
 end
 
 to go
@@ -696,7 +697,7 @@ repeat 200 [ go ]
       <value value="1"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="population">
-      <value value="300"/>
+      <value value="30000"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="max-align-turn">
       <value value="5"/>

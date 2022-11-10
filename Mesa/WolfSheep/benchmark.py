@@ -21,5 +21,6 @@ wolfsheep = WolfSheep()
 """
 
 tt = timeit.Timer('runthemodel(wolfsheep)', setup=setup)
-a = min(tt.repeat(100, 1))
+SAMPLES=10
+a = (sum(tt.repeat(SAMPLES, 1)))/SAMPLES
 print("Mesa WolfSheep (ms):", a*1e3)

@@ -13,24 +13,24 @@ using Test
 #         wolf_reproduce = 0.1,
 #         regrowth_time = 20,
 #     )
-# ) samples = 100
+# ) samples = 10
 # println("Agents.jl WolfSheep (ms): ", minimum(a.times) * 1e-6)
 
 a = @benchmark step!(model, agent_step!, model_step!, 100) setup = (
     (model, agent_step!, model_step!) = Models.flocking(
-        n_birds = 300,
+        n_birds = 30000,
         separation = 1,
         cohere_factor = 0.03,
         separate_factor = 0.015,
         match_factor = 0.05,
     )
-)
+) samples = 10
 println("Agents.jl Flocking (ms): ", minimum(a.times) * 1e-6)
 
 a = @benchmark step!(model, agent_step!, model_step!, 10) setup = (
     (model, agent_step!, model_step!) =
-        Models.schelling(griddims = (50, 50), numagents = 2000)
-) samples = 100
+        Models.schelling(griddims = (150, 150), numagents = 18000)
+) samples = 10
 println("Agents.jl Schelling (ms): ", minimum(a.times) * 1e-6)
 
 # a = @benchmark step!(model, agent_step!, model_step!, 100) setup =

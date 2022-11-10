@@ -22,6 +22,7 @@ fire = ForestFire()
 """
 
 tt = timeit.Timer('runthemodel(fire)', setup=setup)
-a = min(tt.repeat(100, 1))
+SAMPLES=10
+a = (sum(tt.repeat(SAMPLES, 1)))/SAMPLES
 print("Mesa ForestFire (ms):", a*1e3)
 

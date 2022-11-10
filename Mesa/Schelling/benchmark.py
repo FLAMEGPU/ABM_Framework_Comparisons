@@ -18,10 +18,15 @@ def runthemodel(schelling):
       schelling.step()
 
 
-schelling = SchellingModel()
+schelling = SchellingModel(
+  height=150,
+  width=150,
+  density=0.8
+)
 """
 
 tt = timeit.Timer('runthemodel(schelling)', setup=setup)
-a = min(tt.repeat(100, 1))
+SAMPLES=10
+a = (sum(tt.repeat(SAMPLES, 1)))/SAMPLES
 print("Mesa Schelling (ms):", a*1e3)
 
