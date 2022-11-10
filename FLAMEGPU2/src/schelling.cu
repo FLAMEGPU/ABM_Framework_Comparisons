@@ -6,6 +6,7 @@
 #include <chrono>
 
 #include "flamegpu/flamegpu.h"
+#include "flamegpu/util/detail/SteadyClockTimer.h"
 
 // Configurable properties
 unsigned int GRID_WIDTH = 150;
@@ -114,6 +115,9 @@ FLAMEGPU_AGENT_FUNCTION(update_locations, flamegpu::MessageNone, flamegpu::Messa
 
 int main(int argc, const char ** argv) {
     NVTX_RANGE("main");
+    flamegpu::util::detail::SteadyClockTimer mainTimer = {};
+    mainTimer.start();
+
     NVTX_PUSH("ModelDescription");
 
     // Define the model
@@ -338,11 +342,14 @@ int main(int argc, const char ** argv) {
     cudaSimulation.simulate();
 
     // Print the exeuction time to stdout
-    fprintf(stdout, "Elapsed (s): %.6f\n", cudaSimulation.getElapsedTimeSimulation());
+    fprintf(stdout, "simulate (s): %.6f\n", cudaSimulation.getElapsedTimeSimulation());
 
 #ifdef VISUALISATION
     visualisation.join();
 #endif
+
+    mainTimer.stop();
+    fprintf(stdout, "main (s): %.6f\n", mainTimer.getElapsedSeconds());
 
     return EXIT_SUCCESS;
 }

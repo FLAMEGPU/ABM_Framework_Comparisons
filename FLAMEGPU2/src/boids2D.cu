@@ -2,11 +2,12 @@
 #include <cstdlib>
 
 #include "flamegpu/flamegpu.h"
+#include "flamegpu/util/detail/SteadyClockTimer.h"
 
 /**
  * FLAME GPU 2 implementation of the Boids flocking model in 2D, using spatial2D messaging.
  * This is based on the FLAME GPU 1 implementation, but with dynamic generation of agents. 
- * Agents are also clamped to be within the environment bounds, rather than wrapped as in FLAME GPU 1.
+ * The environment is wrapped, effectively the surface of a torus.
  */
 
 /**
@@ -249,6 +250,8 @@ FLAMEGPU_AGENT_FUNCTION(inputdata, flamegpu::MessageSpatial2D, flamegpu::Message
 }
 
 int main(int argc, const char ** argv) {
+    flamegpu::util::detail::SteadyClockTimer mainTimer = {};
+    mainTimer.start();
     flamegpu::ModelDescription model("Boids Spatial3D");
 
     // Environment variables with default values
@@ -395,11 +398,15 @@ int main(int argc, const char ** argv) {
     simulator.simulate();
 
     // Print the exeuction time to stdout
-    fprintf(stdout, "Elapsed (s): %.6f\n", simulator.getElapsedTimeSimulation());
+    fprintf(stdout, "simulate (s): %.6f\n", simulator.getElapsedTimeSimulation());
 
     // Join the visualsition if required
 #ifdef VISUALISATION
     visualisation.join();
 #endif
+
+    mainTimer.stop();
+    fprintf(stdout, "main (s): %.6f\n", mainTimer.getElapsedSeconds());
+
     return EXIT_SUCCESS;
 }
