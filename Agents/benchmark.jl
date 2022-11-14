@@ -1,3 +1,5 @@
+using Pkg; Pkg.instantiate()
+
 using Agents
 using BenchmarkTools
 using Test

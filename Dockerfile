@@ -50,17 +50,18 @@ RUN set -eux; \
     nvcc --version; \
     cmake --version
 
-# (disabled for now) Install Dependencies for Agents.jl
-# ENV JULIA_VERSION_FULL 1.8.2
-# ENV JULIA_VERSION_MM 1.8
-# ENV JULIA_PATH /opt/julia
-# ENV PATH $JULIA_PATH/bin:$PATH
-# RUN set -eux; \
-#     curl -fL -o julia.tar.gz "https://julialang-s3.julialang.org/bin/linux/x64/${JULIA_VERSION_MM}/julia-${JULIA_VERSION_FULL}-linux-x86_64.tar.gz"; \
-#     mkdir -p ${JULIA_PATH}; \
-#     tar -xzf julia.tar.gz -C ${JULIA_PATH} --strip-components 1; \
-#     rm -rf julia.tar.gz; \
-#     julia --version
+# Install Dependencies for Agents.jl
+ENV JULIA_VERSION_FULL 1.8.2
+ENV JULIA_VERSION_MM 1.8
+ENV JULIA_PATH /opt/julia
+ENV PATH $JULIA_PATH/bin:$PATH
+ENV JULIA_DEPOT_PATH "/opt/julia-depot"
+RUN set -eux; \
+    curl -fL -o julia.tar.gz "https://julialang-s3.julialang.org/bin/linux/x64/${JULIA_VERSION_MM}/julia-${JULIA_VERSION_FULL}-linux-x86_64.tar.gz"; \
+    mkdir -p ${JULIA_PATH}; \
+    tar -xzf julia.tar.gz -C ${JULIA_PATH} --strip-components 1; \
+    rm -rf julia.tar.gz; \
+    julia --version
 
 # Install Dependencies for NetLogo
 ENV NETLOGO_VERSION_FULL 6.3.0
@@ -105,11 +106,10 @@ RUN set -eux; \
     python3 -c "import mesa; print(mesa.__version__)"
 
 
-# (Failed attempt to) Install Julia packages from project.toml into the container
-# COPY Project.toml .
-# ENV JULIA_DEPOT_PATH "/home/bench/depot"
-# # Install Julia packages as required by Project.toml?
-# RUN set -eux; \
-#     pwd; \
-#     ls; \
-#     julia -e 'using Pkg; Pkg.activate("."); Pkg.instantiate();'
+# Install Julia packages from project.toml into the container
+COPY Project.toml .
+# Install Julia packages as required by Project.toml?
+RUN set -eux; \
+    pwd; \
+    ls; \
+    julia -e 'using Pkg; Pkg.activate("."); Pkg.instantiate();'

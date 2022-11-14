@@ -24,7 +24,6 @@ We used the following models for the comparison:
 
 Currently several simulators are not being compared due to container issues, several models have been disabled while implementations are not present, and other planned improvements are neccesary.
 
-+ [ ] Julia's Agents.jl is disabled from `run-all.sh` and not in the container, due to containerisation issues
 + [ ] Mason is not present in `runall.sh` (as in the upstream [https://github.com/JuliaDynamics/](https://github.com/JuliaDynamics/ABM_Framework_Comparisons))
 + [ ] Wolf Sheep Grass is not in `runall.sh` as FLAMEGPU2 implementation is missing
 + [ ] Forest Fire is not in `runall.sh` as FLAMEGPU2 implementation is missing
@@ -143,7 +142,7 @@ apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif 
 apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif bash -c "python3 Mesa/ForestFire/benchmark.py"
 ```
 
-<!-- #### Agents.jl
+#### Agents.jl
 
 ```bash
 sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons bash -c "julia --project=@. Agents/benchmark.jl"
@@ -151,7 +150,7 @@ sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-compariso
 
 ```bash
 apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif bash -c "julia --project=@. Agents/benchmark.jl"
-``` -->
+```
 
 #### FLAMEGPU2
 
