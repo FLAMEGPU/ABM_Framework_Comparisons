@@ -55,7 +55,7 @@ ENV JULIA_VERSION_FULL 1.8.2
 ENV JULIA_VERSION_MM 1.8
 ENV JULIA_PATH /opt/julia
 ENV PATH $JULIA_PATH/bin:$PATH
-ENV JULIA_DEPOT_PATH "/opt/julia-depot"
+# ENV JULIA_DEPOT_PATH "/opt/julia-depot" # Julia depot needs to be user writable.
 RUN set -eux; \
     curl -fL -o julia.tar.gz "https://julialang-s3.julialang.org/bin/linux/x64/${JULIA_VERSION_MM}/julia-${JULIA_VERSION_FULL}-linux-x86_64.tar.gz"; \
     mkdir -p ${JULIA_PATH}; \
