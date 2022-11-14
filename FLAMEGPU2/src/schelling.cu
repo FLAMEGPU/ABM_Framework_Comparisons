@@ -9,8 +9,8 @@
 #include "flamegpu/util/detail/SteadyClockTimer.h"
 
 // Configurable properties
-unsigned int GRID_WIDTH = 150;
-unsigned int POPULATED_COUNT = 18000;
+unsigned int GRID_WIDTH = 1000;
+unsigned int POPULATED_COUNT = 800000;
 
 constexpr float THRESHOLD = 0.30;
 

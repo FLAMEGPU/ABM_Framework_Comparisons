@@ -100,9 +100,9 @@ GRAPHICS-WINDOW
 1
 1
 0
-149
+999
 0
-149
+999
 1
 1
 1
@@ -722,7 +722,7 @@ NetLogo 6.2.0
       <value value="&quot;square-x&quot;"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="agents">
-      <value value="18000"/>
+      <value value="800000"/>
     </enumeratedValueSet>
   </experiment>
 </experiments>
