@@ -66,7 +66,7 @@ def extract_times(lines):
 
 # Benchmark Schelling
 schelling_binary_path = SCRIPT_PATH / f"{BUILD_DIR}/bin/{CONFIG}/schelling"
-if flocking_binary_path.is_file():
+if schelling_binary_path.is_file():
     main_times = []
     sim_times = []
     for i in range(0, REPETITIONS):
