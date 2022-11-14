@@ -43,26 +43,26 @@ def extract_times(lines):
 
 
 # Benchmark flocking
-flocking_binary_path = SCRIPT_PATH / f"{BUILD_DIR}/bin/{CONFIG}/boids2D"
-if flocking_binary_path.is_file():
-    main_times = []
-    sim_times = []
-    for i in range(0, REPETITIONS):
-        result = subprocess.run([str(flocking_binary_path), "-s", "100"], stdout=subprocess.PIPE)
-        # @todo make this less brittle
-        lines = result.stdout.decode('utf-8').splitlines()
-        main_time, sim_time = extract_times(lines)
-        main_times.append(main_time)
-        sim_times.append(sim_time)
-    min_main_time = min(main_times)
-    min_simulate_time = min(sim_times)
-    print(f"FLAMEGPU2 Flocking main times (s)    : {main_times}")
-    print(f"FLAMEGPU2 Flocking simulate times (s): {sim_times}")
-    print(f"FLAMEGPU2 Flocking main (ms)    : {min_main_time*1e3}")
-    print(f"FLAMEGPU2 Flocking simulate (ms): {min_simulate_time*1e3}")
+# flocking_binary_path = SCRIPT_PATH / f"{BUILD_DIR}/bin/{CONFIG}/boids2D"
+# if flocking_binary_path.is_file():
+#     main_times = []
+#     sim_times = []
+#     for i in range(0, REPETITIONS):
+#         result = subprocess.run([str(flocking_binary_path), "-s", "100"], stdout=subprocess.PIPE)
+#         # @todo make this less brittle
+#         lines = result.stdout.decode('utf-8').splitlines()
+#         main_time, sim_time = extract_times(lines)
+#         main_times.append(main_time)
+#         sim_times.append(sim_time)
+#     min_main_time = min(main_times)
+#     min_simulate_time = min(sim_times)
+#     print(f"FLAMEGPU2 Flocking main times (s)    : {main_times}")
+#     print(f"FLAMEGPU2 Flocking simulate times (s): {sim_times}")
+#     print(f"FLAMEGPU2 Flocking main (ms)    : {min_main_time*1e3}")
+#     print(f"FLAMEGPU2 Flocking simulate (ms): {min_simulate_time*1e3}")
 
-else:
-    print(f"Error: FLAMEGPU2 flocking executable ({flocking_binary_path}) does not exist. Please build the executables.", file=sys.stderr)
+# else:
+#     print(f"Error: FLAMEGPU2 flocking executable ({flocking_binary_path}) does not exist. Please build the executables.", file=sys.stderr)
 
 # Benchmark Schelling
 schelling_binary_path = SCRIPT_PATH / f"{BUILD_DIR}/bin/{CONFIG}/schelling"
