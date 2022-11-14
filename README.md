@@ -98,11 +98,11 @@ To do this using the container, into `FLAMEGPU2/build`, for a compute capability
 
 ```bash
 # using docker
-sudo sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons bash -c "cmake -S FLAMEGPU2 -B FLAMEGPU2/build .. -DCUDA_ARCH=70 -DSEATBELTS=OFF && cmake --build FLAMEGPU2/build --target all -j `nproc`"
+sudo sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons bash -c "cmake -S FLAMEGPU2 -B FLAMEGPU2/build .. -DCUDA_ARCH=70,80 -DSEATBELTS=OFF && cmake --build FLAMEGPU2/build --target all -j `nproc`"
 
 # Using apptainer:
 # sudo/root may be required for ssh based cloning to work
-sudo apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif bash -c "cmake -S FLAMEGPU2 -B FLAMEGPU2/build .. -DCUDA_ARCH=70 -DSEATBELTS=OFF && cmake --build FLAMEGPU2/build --target all -j `nproc`"
+sudo apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif bash -c "cmake -S FLAMEGPU2 -B FLAMEGPU2/build .. -DCUDA_ARCH=70,80 -DSEATBELTS=OFF && cmake --build FLAMEGPU2/build --target all -j `nproc`"
 ```
 
 This wil have produced binaries in `FLAMEGPU/build/bin/Release/` which can be executed using the container (see below).
