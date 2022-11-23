@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Benchmarking Julia is Disabled"
+echo "Benchmarking Julia"
 julia --project=@. Agents/benchmark.jl
 
 echo "Benchmarking NetLogo"
@@ -9,7 +9,7 @@ echo "Benchmarking NetLogo"
 # ws=$(parallel -j1 ::: $(printf './netlogo_ws.sh %.0s' {1..10}) | sort | head -n1)
 # echo "NetLogo WolfSheep (ms): "$ws
 # ws=$(parallel -j1 ::: $(printf './netlogo_flock.sh %.0s' {1..10}) | sort | head -n1)
-echo "NetLogo Flocking (ms): "$ws
+# echo "NetLogo Flocking (ms): "$ws
 ws=$(parallel -j1 ::: $(printf './netlogo_s.sh %.0s' {1..10}) | sort | head -n1)
 echo "NetLogo Schelling (ms): "$ws
 # ws=$(parallel -j1 ::: $(printf './netlogo_forest.sh %.0s' {1..10}) | sort | head -n1)
