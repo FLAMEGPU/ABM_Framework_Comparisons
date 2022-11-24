@@ -19,9 +19,9 @@ def runthemodel(flock):
 
 
 flock = BoidFlockers(
-  population=30000,
-  width=100,
-  height=100
+  population=100000,
+  width=1000,
+  height=1000
 )
 """
 

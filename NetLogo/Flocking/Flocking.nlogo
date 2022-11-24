@@ -135,9 +135,9 @@ GRAPHICS-WINDOW
 1
 1
 0
-99
+999
 0
-99
+999
 1
 1
 1
@@ -697,7 +697,7 @@ repeat 200 [ go ]
       <value value="1"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="population">
-      <value value="30000"/>
+      <value value="100000"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="max-align-turn">
       <value value="5"/>

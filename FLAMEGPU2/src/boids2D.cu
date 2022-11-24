@@ -260,11 +260,12 @@ int main(int argc, const char ** argv) {
     flamegpu::EnvironmentDescription &env = model.Environment();
 
     // Population size to generate, if no agents are loaded from disk
-    env.newProperty("POPULATION_TO_GENERATE", 30000u);
+    env.newProperty("POPULATION_TO_GENERATE", 100000u);
 
     // Environment Bounds
+
     env.newProperty("MIN_POSITION", 0.0f);
-    env.newProperty("MAX_POSITION", 99.0f);
+    env.newProperty("MAX_POSITION", 999.0f);
 
     // Initialisation parameter(s)
     env.newProperty("INITIAL_SPEED", 1.0f); // always start with a spee dof 

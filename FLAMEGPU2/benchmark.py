@@ -53,31 +53,31 @@ def extract_times(lines):
 
 
 # Benchmark flocking
-# flocking_binary_path = SCRIPT_PATH / f"{BUILD_DIR}/bin/{CONFIG}/boids2D"
-# if flocking_binary_path.is_file():
-#     pre_pop_times = []
-#     pop_gen_times = []
-#     main_times = []
-#     sim_times = []
-#     for i in range(0, REPETITIONS):
-#         result = subprocess.run([str(flocking_binary_path), "-s", "100"], stdout=subprocess.PIPE)
-#         # @todo make this less brittle
-#         lines = result.stdout.decode('utf-8').splitlines()
-#         pre_pop_time, pop_gen_time, main_time, sim_time = extract_times(lines)
-#         pre_pop_times.append(pre_pop_time)
-#         pop_gen_times.append(pop_gen_time)
-#         main_times.append(main_time)
-#         sim_times.append(sim_time)
-#     min_main_time = min(main_times)
-#     min_simulate_time = min(sim_times)
-#     print(f"FLAMEGPU2 flocking prepop times (s)  : {pre_pop_times}")
-#     print(f"FLAMEGPU2 flocking popgen times (s)  : {pop_gen_times}")
-#     print(f"FLAMEGPU2 flocking simulate times (s): {sim_times}")
-#     print(f"FLAMEGPU2 flocking main times (s)    : {main_times}")
-#     print(f"FLAMEGPU2 flocking prepop (mean ms)  : {statistics.mean(pre_pop_times)*1e3}")
-#     print(f"FLAMEGPU2 flocking popgen (mean ms)  : {statistics.mean(pop_gen_times)*1e3}")
-#     print(f"FLAMEGPU2 flocking simulate (mean ms): {statistics.mean(sim_times)*1e3}")
-#     print(f"FLAMEGPU2 flocking main (mean ms)    : {statistics.mean(main_times)*1e3}")
+flocking_binary_path = SCRIPT_PATH / f"{BUILD_DIR}/bin/{CONFIG}/boids2D"
+if flocking_binary_path.is_file():
+    pre_pop_times = []
+    pop_gen_times = []
+    main_times = []
+    sim_times = []
+    for i in range(0, REPETITIONS):
+        result = subprocess.run([str(flocking_binary_path), "-s", "100"], stdout=subprocess.PIPE)
+        # @todo make this less brittle
+        lines = result.stdout.decode('utf-8').splitlines()
+        pre_pop_time, pop_gen_time, main_time, sim_time = extract_times(lines)
+        pre_pop_times.append(pre_pop_time)
+        pop_gen_times.append(pop_gen_time)
+        main_times.append(main_time)
+        sim_times.append(sim_time)
+    min_main_time = min(main_times)
+    min_simulate_time = min(sim_times)
+    print(f"FLAMEGPU2 flocking prepop times (s)  : {pre_pop_times}")
+    print(f"FLAMEGPU2 flocking popgen times (s)  : {pop_gen_times}")
+    print(f"FLAMEGPU2 flocking simulate times (s): {sim_times}")
+    print(f"FLAMEGPU2 flocking main times (s)    : {main_times}")
+    print(f"FLAMEGPU2 flocking prepop (mean ms)  : {statistics.mean(pre_pop_times)*1e3}")
+    print(f"FLAMEGPU2 flocking popgen (mean ms)  : {statistics.mean(pop_gen_times)*1e3}")
+    print(f"FLAMEGPU2 flocking simulate (mean ms): {statistics.mean(sim_times)*1e3}")
+    print(f"FLAMEGPU2 flocking main (mean ms)    : {statistics.mean(main_times)*1e3}")
 
 
 # else:
