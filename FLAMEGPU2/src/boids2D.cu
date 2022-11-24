@@ -252,6 +252,8 @@ FLAMEGPU_AGENT_FUNCTION(inputdata, flamegpu::MessageSpatial2D, flamegpu::Message
 int main(int argc, const char ** argv) {
     flamegpu::util::detail::SteadyClockTimer mainTimer = {};
     mainTimer.start();
+    flamegpu::util::detail::SteadyClockTimer prePopulationTimer = {};
+    prePopulationTimer.start();
     flamegpu::ModelDescription model("Boids Spatial3D");
 
     // Environment variables with default values
@@ -354,6 +356,11 @@ int main(int argc, const char ** argv) {
 
     // Initialisation
     simulator.initialise(argc, argv);
+    prePopulationTimer.stop();
+    fprintf(stdout, "pre population (s): %.6f\n", prePopulationTimer.getElapsedSeconds());
+
+    flamegpu::util::detail::SteadyClockTimer populationGenerationTimer = {};
+    populationGenerationTimer.start();
 
     // If no agent states were provided, generate a population of randomly distributed agents within the environment space
     if (simulator.getSimulationConfig().input_file.empty()) {
@@ -393,6 +400,9 @@ int main(int argc, const char ** argv) {
         }
         simulator.setPopulationData(population);
     }
+
+    populationGenerationTimer.stop();
+    fprintf(stdout, "population generation (s): %.6f\n", populationGenerationTimer.getElapsedSeconds());
 
     // Execute the simulation
     simulator.simulate();

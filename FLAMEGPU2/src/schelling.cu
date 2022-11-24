@@ -117,8 +117,8 @@ int main(int argc, const char ** argv) {
     NVTX_RANGE("main");
     flamegpu::util::detail::SteadyClockTimer mainTimer = {};
     mainTimer.start();
-
-    NVTX_PUSH("ModelDescription");
+    flamegpu::util::detail::SteadyClockTimer prePopulationTimer = {};
+    prePopulationTimer.start();
 
     // Define the model
     flamegpu::ModelDescription model("Schelling_segregation");
@@ -258,12 +258,9 @@ int main(int argc, const char ** argv) {
         flamegpu::LayerDescription  &layer = model.newLayer();
         layer.addAgentFunction(determine_status);
     }
-    NVTX_POP();
 
     // Create the simulator for the model
-    NVTX_PUSH("CUDASimulation creation");
     flamegpu::CUDASimulation cudaSimulation(model);
-    NVTX_POP();
 
     /*
      * Create visualisation
@@ -291,9 +288,12 @@ int main(int argc, const char ** argv) {
 #endif
 
     // Initialise the simulation
-    NVTX_PUSH("CUDASimulation initialisation");
     cudaSimulation.initialise(argc, argv);
+    prePopulationTimer.stop();
+    fprintf(stdout, "pre population (s): %.6f\n", prePopulationTimer.getElapsedSeconds());
 
+    flamegpu::util::detail::SteadyClockTimer populationGenerationTimer = {};
+    populationGenerationTimer.start();
     // Generate a population if not provided from disk
     if (cudaSimulation.getSimulationConfig().input_file.empty()) {
         // Use a seeded mt19937 generator
@@ -336,7 +336,8 @@ int main(int argc, const char ** argv) {
         }
         cudaSimulation.setPopulationData(population);
     }
-    NVTX_POP();
+    populationGenerationTimer.stop();
+    fprintf(stdout, "population generation (s): %.6f\n", populationGenerationTimer.getElapsedSeconds());
 
     // Run the simulation    
     cudaSimulation.simulate();
