@@ -5,7 +5,7 @@ using BenchmarkTools
 using Test
 using Statistics
 
-SAMPLE_COUNT = 5
+SAMPLE_COUNT = 10
 
 # a = @benchmark step!(model, agent_step!, model_step!, 500) setup = (
 #     (model, agent_step!, model_step!) = Models.predator_prey(

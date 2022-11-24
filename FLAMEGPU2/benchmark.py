@@ -14,7 +14,7 @@ import statistics
 SCRIPT_PATH = pathlib.Path(__file__).parent
 BUILD_DIR = "build"
 CONFIG = "Release"
-REPETITIONS = 5
+REPETITIONS = 10
 
 
 def extract_times(lines):
