@@ -19,8 +19,8 @@ def runthemodel(schelling):
 
 
 schelling = SchellingModel(
-  height=1000,
-  width=1000,
+  height=500,
+  width=500,
   density=0.8
 )
 """

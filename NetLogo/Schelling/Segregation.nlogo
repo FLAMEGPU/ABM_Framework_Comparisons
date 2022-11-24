@@ -100,9 +100,9 @@ GRAPHICS-WINDOW
 1
 1
 0
-999
+499
 0
-999
+499
 1
 1
 1
@@ -716,7 +716,7 @@ NetLogo 6.2.0
     <go>benchmark</go>
     <exitCondition>ticks = 10</exitCondition>
     <enumeratedValueSet variable="%-similar-wanted">
-      <value value="30"/>
+      <value value="37.5"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="visualization">
       <value value="&quot;square-x&quot;"/>

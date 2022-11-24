@@ -31,7 +31,7 @@ using Test
 
 a = @benchmark step!(model, agent_step!, model_step!, 10) setup = (
     (model, agent_step!, model_step!) =
-        Models.schelling(griddims = (1000, 1000), numagents = 800000)
+        Models.schelling(griddims = (500, 500), numagents = 200000)
 ) samples = 10
 println("Agents.jl Schelling (ms): ", minimum(a.times) * 1e-6)
 
