@@ -4,7 +4,7 @@
 # @todo - gpg & sha validation of remote downloads + version pinning
 
 # Must use an nvidia/cuda base image for libcuda.so redistribution
-FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
+FROM nvidia/cuda:11.7.0-devel-ubuntu22.04
 
 # Only support building for x86_64 CPU arch, as arch specific precompiled binaries are downloaded
 RUN set -eux; \
