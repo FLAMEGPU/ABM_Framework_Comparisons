@@ -714,7 +714,7 @@ NetLogo 6.2.0
   <experiment name="benchmark" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>benchmark</go>
-    <exitCondition>ticks = 10</exitCondition>
+    <exitCondition>ticks = 100</exitCondition>
     <enumeratedValueSet variable="%-similar-wanted">
       <value value="37.5"/>
     </enumeratedValueSet>

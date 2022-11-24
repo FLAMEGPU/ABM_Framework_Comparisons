@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE experiments SYSTEM "behaviorspace.dtd">
+
+<experiments>
+    <experiment name="100" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="false">
+      <setup>setup</setup>
+      <go>benchmark</go>
+      <exitCondition>ticks = 100</exitCondition>
+      <enumeratedValueSet variable="max-cohere-turn">
+        <value value="3"/>
+      </enumeratedValueSet>
+      <enumeratedValueSet variable="max-separate-turn">
+        <value value="1.5"/>
+      </enumeratedValueSet>
+      <enumeratedValueSet variable="vision">
+        <value value="5"/>
+      </enumeratedValueSet>
+      <enumeratedValueSet variable="minimum-separation">
+        <value value="1"/>
+      </enumeratedValueSet>
+      <enumeratedValueSet variable="population">
+        <value value="100"/>
+      </enumeratedValueSet>
+      <enumeratedValueSet variable="max-align-turn">
+        <value value="5"/>
+      </enumeratedValueSet>
+    </experiment>
+    <experiment name="300" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="false">
+        <setup>setup</setup>
+        <go>benchmark</go>
+        <exitCondition>ticks = 100</exitCondition>
+        <enumeratedValueSet variable="max-cohere-turn">
+          <value value="3"/>
+        </enumeratedValueSet>
+        <enumeratedValueSet variable="max-separate-turn">
+          <value value="1.5"/>
+        </enumeratedValueSet>
+        <enumeratedValueSet variable="vision">
+          <value value="5"/>
+        </enumeratedValueSet>
+        <enumeratedValueSet variable="minimum-separation">
+          <value value="1"/>
+        </enumeratedValueSet>
+        <enumeratedValueSet variable="population">
+          <value value="300"/>
+        </enumeratedValueSet>
+        <enumeratedValueSet variable="max-align-turn">
+          <value value="5"/>
+        </enumeratedValueSet>
+      </experiment>
+      <experiment name="1000" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="false">
+        <setup>setup</setup>
+        <go>benchmark</go>
+        <exitCondition>ticks = 100</exitCondition>
+        <enumeratedValueSet variable="max-cohere-turn">
+          <value value="3"/>
+        </enumeratedValueSet>
+        <enumeratedValueSet variable="max-separate-turn">
+          <value value="1.5"/>
+        </enumeratedValueSet>
+        <enumeratedValueSet variable="vision">
+          <value value="5"/>
+        </enumeratedValueSet>
+        <enumeratedValueSet variable="minimum-separation">
+          <value value="1"/>
+        </enumeratedValueSet>
+        <enumeratedValueSet variable="population">
+          <value value="1000"/>
+        </enumeratedValueSet>
+        <enumeratedValueSet variable="max-align-turn">
+          <value value="5"/>
+        </enumeratedValueSet>
+      </experiment>
+  </experiments>

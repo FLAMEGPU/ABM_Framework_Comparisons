@@ -34,7 +34,7 @@ SAMPLE_COUNT = 5
 # println("Agnets.jl Flocking times (ms)", map(x -> x * 1e-6, a.times))
 # println("Agents.jl Flocking (mean ms): ", (Statistics.mean(a.times)) * 1e-6)
 
-a = @benchmark step!(model, agent_step!, model_step!, 10) setup = (
+a = @benchmark step!(model, agent_step!, model_step!, 100) setup = (
     (model, agent_step!, model_step!) =
         Models.schelling(griddims = (500, 500), numagents = 200000)
 ) samples = SAMPLE_COUNT

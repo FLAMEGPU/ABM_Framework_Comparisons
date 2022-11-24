@@ -15,7 +15,7 @@ import random
 random.seed(2)
 
 def runthemodel(schelling):
-    for i in range(0, 10):
+    for i in range(0, 100):
       schelling.step()
 
 

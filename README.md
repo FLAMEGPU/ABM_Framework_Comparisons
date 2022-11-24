@@ -165,7 +165,7 @@ sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-compariso
 ```bash
 apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif bash -c "python3 FLAMEGPU2/benchmark.py"
 apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif bash -c "./FLAMEGPU2/build/bin/Release/boids2D -s 100 -t"
-apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif bash -c "./FLAMEGPU2/build/bin/Release/schelling -s 10 -t"
+apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif bash -c "./FLAMEGPU2/build/bin/Release/schelling -s 100 -t"
 ```
 
 <!-- #### Mason
