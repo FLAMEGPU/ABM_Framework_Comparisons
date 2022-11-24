@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo "Benchmarking FLAMEGPU2"
+python3 FLAMEGPU2/benchmark.py
+
 echo "Benchmarking Julia"
 julia --project=@. Agents/benchmark.jl
 
@@ -23,5 +26,3 @@ python3 Mesa/Schelling/benchmark.py
 
 echo "Mason Benchmarks are disabled"
 
-echo "Benchmarking FLAMEGPU2"
-python3 FLAMEGPU2/benchmark.py
