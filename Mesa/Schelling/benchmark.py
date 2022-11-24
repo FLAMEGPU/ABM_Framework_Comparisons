@@ -18,16 +18,19 @@ def runthemodel(schelling):
     for i in range(0, 100):
       schelling.step()
 
-
+print("start ctor")
+a = time.monotonic_ns()
 schelling = SchellingModel(
   height=500,
   width=500,
   density=0.8
 )
+b = time.monotonic_ns()
+print("ctor", ":", b-a, " ns")
 """
 
 tt = timeit.Timer('runthemodel(schelling)', setup=setup)
-SAMPLES=5
+SAMPLES=3
 a = tt.repeat(SAMPLES, 1)
 print("Mesa Flocking times (ms):", list(map(lambda x: x * 1e3, a)))
 print("Mesa Flocking (mean ms):", statistics.mean(a)*1e3)

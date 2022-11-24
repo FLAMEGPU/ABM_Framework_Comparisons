@@ -23,7 +23,7 @@ fire = ForestFire()
 """
 
 tt = timeit.Timer('runthemodel(fire)', setup=setup)
-SAMPLES=5
+SAMPLES=3
 a = tt.repeat(SAMPLES, 1)
 print("Mesa Flocking times (ms):", list(map(lambda x: x * 1e3, a)))
 print("Mesa Flocking (mean ms):", statistics.mean(a)*1e3)
