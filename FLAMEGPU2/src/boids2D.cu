@@ -263,25 +263,24 @@ int main(int argc, const char ** argv) {
     env.newProperty("POPULATION_TO_GENERATE", 30000u);
 
     // Environment Bounds
-    env.newProperty("MIN_POSITION", -0.5f);
-    env.newProperty("MAX_POSITION", +0.5f);
+    env.newProperty("MIN_POSITION", 0.0f);
+    env.newProperty("MAX_POSITION", 99.0f);
 
     // Initialisation parameter(s)
-    env.newProperty("MAX_INITIAL_SPEED", 1.0f);
-    env.newProperty("MIN_INITIAL_SPEED", 0.1f);
+    env.newProperty("INITIAL_SPEED", 1.0f); // always start with a spee dof 
 
     // Interaction radius
-    env.newProperty("INTERACTION_RADIUS", 0.05f);
-    env.newProperty("SEPARATION_RADIUS", 0.01f);
+    env.newProperty("INTERACTION_RADIUS", 5.0f);
+    env.newProperty("SEPARATION_RADIUS", 1.0f);
 
     // Global Scalers
-    env.newProperty("TIME_SCALE", 0.0005f);
-    env.newProperty("GLOBAL_SCALE", 0.15f);
+    env.newProperty("TIME_SCALE", 1.0f); // 1.0 for benchmarking to behave teh same as the other simulators.
+    env.newProperty("GLOBAL_SCALE", 1.0f); // 1.0 for comparing to other benchamrks
 
     // Rule scalers
-    env.newProperty("STEER_SCALE", 0.055f);
-    env.newProperty("COLLISION_SCALE", 10.0f);
-    env.newProperty("MATCH_SCALE", 0.015f);
+    env.newProperty("STEER_SCALE", 0.03f); // cohere scale?  0.03
+    env.newProperty("COLLISION_SCALE", 0.015f); // separate_scale? 0.015
+    env.newProperty("MATCH_SCALE", 0.05f); // match 0.05
 
 
     // Define the Location 2D spatial message list
@@ -372,8 +371,6 @@ int main(int argc, const char ** argv) {
         std::uniform_real_distribution<float> position_distribution(env.getProperty<float>("MIN_POSITION"), env.getProperty<float>("MAX_POSITION"));
         // Uniform distribution of velocity direction components
         std::uniform_real_distribution<float> velocity_distribution(-1, 1);
-        // Uniform distribution of velocity magnitudes
-        std::uniform_real_distribution<float> velocity_magnitude_distribution(env.getProperty<float>("MIN_INITIAL_SPEED"), env.getProperty<float>("MAX_INITIAL_SPEED"));
 
         // Generate a population of agents, based on the relevant environment property
         const unsigned int populationSize = env.getProperty<unsigned int>("POPULATION_TO_GENERATE");
@@ -389,7 +386,7 @@ int main(int argc, const char ** argv) {
             float fx = velocity_distribution(rngEngine);
             float fy = velocity_distribution(rngEngine);
             // Generate a random speed between 0 and the maximum initial speed
-            float fmagnitude = velocity_magnitude_distribution(rngEngine);
+            float fmagnitude = env.getProperty<float>("INITIAL_SPEED");
             // Use the random speed for the velocity.
             vec3Normalize(fx, fy);
             vec3Mult(fx, fy, fmagnitude);
