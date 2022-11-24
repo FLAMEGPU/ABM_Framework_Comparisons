@@ -22,17 +22,19 @@ SAMPLE_COUNT = 5
 # println("Agnets.jl WolfSheep times (ms)", map(x -> x * 1e-6, a.times))
 # println("Agents.jl WolfSheep (mean ms): ", (Statistics.mean(a.times)) * 1e-6)
 
-# a = @benchmark step!(model, agent_step!, model_step!, 100) setup = (
-#     (model, agent_step!, model_step!) = Models.flocking(
-#         n_birds = 30000,
-#         separation = 1,
-#         cohere_factor = 0.03,
-#         separate_factor = 0.015,
-#         match_factor = 0.05,
-#     )
-# ) samples = SAMPLE_COUNT
-# println("Agnets.jl Flocking times (ms)", map(x -> x * 1e-6, a.times))
-# println("Agents.jl Flocking (mean ms): ", (Statistics.mean(a.times)) * 1e-6)
+a = @benchmark step!(model, agent_step!, model_step!, 100) setup = (
+    (model, agent_step!, model_step!) = Models.flocking(
+        n_birds = 30000,
+        separation = 1,
+        cohere_factor = 0.03,
+        separate_factor = 0.015,
+        match_factor = 0.05,
+        visual_distance = 5.0,
+        extent = (100, 100),
+    )
+) samples = SAMPLE_COUNT
+println("Agnets.jl Flocking times (ms)", map(x -> x * 1e-6, a.times))
+println("Agents.jl Flocking (mean ms): ", (Statistics.mean(a.times)) * 1e-6)
 
 a = @benchmark step!(model, agent_step!, model_step!, 100) setup = (
     (model, agent_step!, model_step!) =
