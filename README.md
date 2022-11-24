@@ -159,13 +159,13 @@ Once the FLAMEGPU 2 binaries have been compiled as above, they can be executed u
 ```bash
 sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons bash -c "python3 FLAMEGPU2/benchmark.py"
 sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons bash -c "./FLAMEGPU2/build/bin/Release/boids2D -s 100 -t"
-sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons bash -c "./FLAMEGPU2/build/bin/Release/schelling -s 100 -t"
+sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons bash -c "./FLAMEGPU2/build/bin/Release/schelling -s 10 -t"
 ```
 
 ```bash
 apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif bash -c "python3 FLAMEGPU2/benchmark.py"
 apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif bash -c "./FLAMEGPU2/build/bin/Release/boids2D -s 100 -t"
-apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif bash -c "./FLAMEGPU2/build/bin/Release/schelling -s 100 -t"
+apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif bash -c "./FLAMEGPU2/build/bin/Release/schelling -s 10 -t"
 ```
 
 <!-- #### Mason

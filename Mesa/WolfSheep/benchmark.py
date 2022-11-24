@@ -4,6 +4,7 @@
 
 import timeit
 import gc
+import statistics
 
 setup = f"""
 gc.enable()
@@ -21,6 +22,7 @@ wolfsheep = WolfSheep()
 """
 
 tt = timeit.Timer('runthemodel(wolfsheep)', setup=setup)
-SAMPLES=10
-a = (sum(tt.repeat(SAMPLES, 1)))/SAMPLES
-print("Mesa WolfSheep (ms):", a*1e3)
+SAMPLES=5
+a = tt.repeat(SAMPLES, 1)
+print("Mesa Flocking times (ms):", list(map(lambda x: x * 1e3, a)))
+print("Mesa Flocking (mean ms):", statistics.mean(a)*1e3)

@@ -3,6 +3,9 @@ using Pkg; Pkg.instantiate()
 using Agents
 using BenchmarkTools
 using Test
+using Statistics
+
+SAMPLE_COUNT = 5
 
 # a = @benchmark step!(model, agent_step!, model_step!, 500) setup = (
 #     (model, agent_step!, model_step!) = Models.predator_prey(
@@ -15,8 +18,9 @@ using Test
 #         wolf_reproduce = 0.1,
 #         regrowth_time = 20,
 #     )
-# ) samples = 10
-# println("Agents.jl WolfSheep (ms): ", minimum(a.times) * 1e-6)
+# ) samples = SAMPLE_COUNT
+# println("Agnets.jl WolfSheep times (ms)", map(x -> x * 1e-6, a.times))
+# println("Agents.jl WolfSheep (mean ms): ", (Statistics.mean(a.times)) * 1e-6)
 
 # a = @benchmark step!(model, agent_step!, model_step!, 100) setup = (
 #     (model, agent_step!, model_step!) = Models.flocking(
@@ -26,16 +30,19 @@ using Test
 #         separate_factor = 0.015,
 #         match_factor = 0.05,
 #     )
-# ) samples = 10
-# println("Agents.jl Flocking (ms): ", minimum(a.times) * 1e-6)
+# ) samples = SAMPLE_COUNT
+# println("Agnets.jl Flocking times (ms)", map(x -> x * 1e-6, a.times))
+# println("Agents.jl Flocking (mean ms): ", (Statistics.mean(a.times)) * 1e-6)
 
 a = @benchmark step!(model, agent_step!, model_step!, 10) setup = (
     (model, agent_step!, model_step!) =
         Models.schelling(griddims = (500, 500), numagents = 200000)
-) samples = 10
-println("Agents.jl Schelling (ms): ", minimum(a.times) * 1e-6)
+) samples = SAMPLE_COUNT
+println("Agnets.jl schelling times (ms)", map(x -> x * 1e-6, a.times))
+println("Agents.jl Schelling (mean ms): ", (Statistics.mean(a.times)) * 1e-6)
 
 # a = @benchmark step!(model, agent_step!, model_step!, 100) setup =
 #     ((model, agent_step!, model_step!) = Models.forest_fire())
-# println("Agents.jl ForestFire (ms): ", minimum(a.times) * 1e-6)
+# println("Agnets.jl ForestFire times (ms)", map(x -> x * 1e-6, a.times))
+# println("Agents.jl ForestFire (mean ms): ", (Statistics.mean(a.times)) * 1e-6)
 
