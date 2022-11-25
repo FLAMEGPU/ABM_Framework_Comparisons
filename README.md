@@ -3,7 +3,7 @@
 Many agent-based modeling frameworks have been constructed to ease the process of building and analyzing ABMs (see [here](http://dx.doi.org/10.1016/j.cosrev.2017.03.001) for a review).
 Notable examples are [NetLogo](https://ccl.northwestern.edu/netlogo/), [Repast](https://repast.github.io/index.html), [MASON](https://journals.sagepub.com/doi/10.1177/0037549705058073), [Mesa](https://github.com/projectmesa/mesa) and [FLAMEGPU2](https://github.com/FLAMEGPU/FLAMEGPU2).
 
-This repository contains examples to compare the perfromance of muliple ABM Frameworks including:
+This repository contains examples to compare the performance of muliple ABM Frameworks including:
 
 + [FLAMEGPU2](https://github.com/FLAMEGPU/FLAMEGPU2)
 + [Agents.jl](https://github.com/JuliaDynamics/Agents.jl)
@@ -19,6 +19,15 @@ We used the following models for the comparison:
 - **Flocking**, a `ContinuousSpace` model, chosen over other models to include a MASON benchmark. Agents must move in accordance with social rules over the space.
 <!-- - **Forest fire**, provides comparisons for cellular automata type ABMs (i.e. when agents do not move and every location in space contains exactly one agent). NOTE: The Agents.jl implementation of this model has been changed in v4.0 to be directly comparable to Mesa and NetLogo. As a consequence it no longer follows the [original rule-set](https://en.wikipedia.org/wiki/Forest-fire_model). -->
 - **Schelling's-segregation-model**, an additional `GridSpace` model to compare with MASON. Simpler rules than Wolf Sheep Grass.
+
+## Benchmark Timing
+
+The benchmarking is setup to time the execution of `N` simulation steps in each simulator, excluding overhead costs of the runtime, model construction and the initial population of agents.
+
+Each simulation is ran multiple times, and an average runtime is taken. This is not using the minimum as this is not a micro-benchmark, and not all models are seeded so stochasticity is a factor.
+MESA and NetLogo simulations may use fewer repetitions than Agents.jl and FLAME GPU due to total benchmark execution run time for the large scale of these simulations.
+
+The FLAME GPU simulation outputs multiple different timing values, but the `simulate (mean ms)` values are the most representative compared to the other simulators, as this is just the execution of the simulation iterations/steps, rather than including CUDA context creation, model definiiton and population generation. 
 
 ## Status
 
@@ -159,7 +168,7 @@ Once the FLAMEGPU 2 binaries have been compiled as above, they can be executed u
 ```bash
 sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons bash -c "python3 FLAMEGPU2/benchmark.py"
 sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons bash -c "./FLAMEGPU2/build/bin/Release/boids2D -s 100 -t"
-sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons bash -c "./FLAMEGPU2/build/bin/Release/schelling -s 10 -t"
+sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons bash -c "./FLAMEGPU2/build/bin/Release/schelling -s 100 -t"
 ```
 
 ```bash
