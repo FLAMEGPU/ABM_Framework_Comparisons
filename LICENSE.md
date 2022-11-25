@@ -12,7 +12,5 @@ This repository includes code for benchmarking purposes from the following proje
 - [Mesa](https://github.com/projectmesa/mesa/blob/master/LICENSE) [Apache2]
 - [MASON](https://github.com/eclab/mason/blob/master/LICENSE) [AFL]
 - [NetLogo, Flocking](http://ccl.northwestern.edu/netlogo/models/Flocking) [Creative Commons Attribution-NonCommercial-ShareAlike 3.0]
-- [NetLogo, Wolf Sheep Predation](http://ccl.northwestern.edu/netlogo/models/WolfSheepPredation) [Creative Commons Attribution-NonCommercial-ShareAlike 3.0]
-- [NetLogo, Fire](http://ccl.northwestern.edu/netlogo/models/Fire) [Creative Commons Attribution-NonCommercial-ShareAlike 3.0]
 - [NetLogo, Segregation](http://ccl.northwestern.edu/netlogo/models/Segregation) [Creative Commons Attribution-NonCommercial-ShareAlike 3.0]
 - [FLAMEGPU2](https://github.com/FLAMEGPU/FLAMEGPU2/blob/master/LICENSE.md) [MIT]

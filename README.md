@@ -13,12 +13,10 @@ This repository contains examples to compare the performance of muliple ABM Fram
 
 Based on / Forked from [https://github.com/JuliaDynamics/](https://github.com/JuliaDynamics/ABM_Framework_Comparisons)
 
-We used the following models for the comparison:
+It includes the following models for the comparison:
 
-<!-- - **Wolf Sheep Grass**, a `GridSpace` model, which requires agents to be added, removed and moved; as well as identify properties of neighbouring positions. -->
 - **Flocking**, a `ContinuousSpace` model, chosen over other models to include a MASON benchmark. Agents must move in accordance with social rules over the space.
-<!-- - **Forest fire**, provides comparisons for cellular automata type ABMs (i.e. when agents do not move and every location in space contains exactly one agent). NOTE: The Agents.jl implementation of this model has been changed in v4.0 to be directly comparable to Mesa and NetLogo. As a consequence it no longer follows the [original rule-set](https://en.wikipedia.org/wiki/Forest-fire_model). -->
-- **Schelling's-segregation-model**, an additional `GridSpace` model to compare with MASON. Simpler rules than Wolf Sheep Grass.
+- **Schelling's-segregation-model**, a `GridSpace` model to compare with MASON.
 
 ## Benchmark Timing
 
@@ -34,19 +32,14 @@ The FLAME GPU simulation outputs multiple different timing values, but the `simu
 Currently several simulators are not being compared due to container issues, several models have been disabled while implementations are not present, and other planned improvements are neccesary.
 
 + [ ] Mason is not present in `runall.sh` (as in the upstream [https://github.com/JuliaDynamics/](https://github.com/JuliaDynamics/ABM_Framework_Comparisons))
-+ [ ] Wolf Sheep Grass is not in `runall.sh` as FLAMEGPU2 implementation is missing
-+ [ ] Forest Fire is not in `runall.sh` as FLAMEGPU2 implementation is missing
 + [ ] FLAMEGPU 2 binaries must be compiled in the local filesystem rather than packaged into a container
 + [ ] Version pinning for reproducibility is incomplete / not ideal.
 + [ ] Benchmarking is at a single scale
-+ [ ] Benchmarking uses the minimum runtime of N repetitions, discarding other values
 + [ ] Simulations are not (all) seeded for reproducibility for stochastic initialisation
   + Different implementations use different PRNG, so the same seed will not produce the same simulation
 + [ ] Multi-stage docker build with a development and runtime image would improve file size and portability (with an entrypoint to `runall.sh`)
-+ [ ] Need to check models all use the same parameters (or equivalent in normalised space) for a fairer comparison
 + [ ] Provide a smaller dockerfile not based on a CUDA dockerfile for non-GPU benchmarking.
 + [ ] Repast4Py would be a good addition.
-+ [ ] FLAMEGPU2's python interface may simplify thigns.
 
 ## Containers
 
@@ -56,8 +49,6 @@ The included dockerfile can be used to create a container with the build/runtime
 Alternatively, a singularity container can be generated from the Dockerfile if required.
 
 > Note: This requires an Nvidia or greater GPU, with a CUDA 11.8 compatible driver installed on the host system.
-
-> Note: This does not (currently) include Mason execution.
 
 To make use of the docker container currently (as it is not pushed to a registry):
 
@@ -138,17 +129,13 @@ If you do not wish to run the full benchmark suite in one go, individual executi
 #### Mesa
 
 ```bash
-sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons bash -c "python3 Mesa/WolfSheep/benchmark.py"
 sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons bash -c "python3 Mesa/Flocking/benchmark.py"
 sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons bash -c "python3 Mesa/Schelling/benchmark.py"
-sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons bash -c "python3 Mesa/ForestFire/benchmark.py"
 ```
 
 ```bash
-apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif bash -c "python3 Mesa/WolfSheep/benchmark.py"
 apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif bash -c "python3 Mesa/Flocking/benchmark.py"
 apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif bash -c "python3 Mesa/Schelling/benchmark.py"
-apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif bash -c "python3 Mesa/ForestFire/benchmark.py"
 ```
 
 #### Agents.jl
@@ -185,14 +172,10 @@ Mason runs are not currently supported/tested via the container. -->
 
 ```bash
 sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons ./netlogo_flock.sh
-sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons ./netlogo_forest.sh
 sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons ./netlogo_s.sh
-sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons ./netlogo_ws.sh
 ```
 
 ```bash
-apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif ./netlogo_flock.sh
 apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif ./netlogo_forest.sh
 apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif ./netlogo_s.sh
-apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif ./netlogo_ws.sh
 ```
