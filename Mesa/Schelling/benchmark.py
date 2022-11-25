@@ -18,15 +18,11 @@ def runthemodel(schelling):
     for i in range(0, 100):
       schelling.step()
 
-print("start ctor")
-a = time.monotonic_ns()
 schelling = SchellingModel(
   height=500,
   width=500,
   density=0.8
 )
-b = time.monotonic_ns()
-print("ctor", ":", b-a, " ns")
 """
 
 tt = timeit.Timer('runthemodel(schelling)', setup=setup)
