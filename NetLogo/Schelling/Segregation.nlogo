@@ -31,7 +31,7 @@ end
 to benchmark
   profiler:reset         ;; clear the data
   profiler:start         ;; start profiling
-  repeat 10 [go]        ;; run for 10 steps
+  repeat 100 [go]        ;; run for 100 steps
   profiler:stop          ;; stop profiling
   print profiler:report
 end
