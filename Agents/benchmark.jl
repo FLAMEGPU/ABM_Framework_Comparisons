@@ -4,8 +4,12 @@ using Agents
 using Test
 using Statistics
 
+# Does not use @bencmark, due to jobs being OOM killed for long-running models, with a higher maximum runtime to allow the required repetitions.
+# enabling the gc between samples did not resolve this BenchmarkTools.DEFAULT_PARAMETERS.gcsample = false
+# Runs each model SAMPLE_COUNT + 1 times, discarding hte first timing (which includes compilation)
 SAMPLE_COUNT = 10
 
+# Predatory Prey
 # times = []
 # for i in 0:SAMPLE_COUNT
 #     (model, agent_step!, model_step!) = Models.predator_prey(
@@ -26,11 +30,10 @@ SAMPLE_COUNT = 10
 #         append!(times, step_stats.time)
 #     end
 # end
-# println("Agnets.jl WolfSheep times (ms)", map(x -> x * 1e3, times))
+# println("Agents.jl WolfSheep times (ms)", map(x -> x * 1e3, times))
 # println("Agents.jl WolfSheep (mean ms): ", (Statistics.mean(times)) * 1e3)
 
-# Don't use @benchmark for multiple long runs - it eats and eats memory even with gc enabled?
-# Run 1 to N times, discarding the first timing.
+# Boids
 times = []
 for i in 0:SAMPLE_COUNT
     (model, agent_step!, model_step!) = Models.flocking(
@@ -47,11 +50,10 @@ for i in 0:SAMPLE_COUNT
         append!(times, step_stats.time)
     end
 end
-println("Agnets.jl Flocking times (ms)", map(x -> x * 1e3, times))
+println("Agents.jl Flocking times (ms)", map(x -> x * 1e3, times))
 println("Agents.jl Flocking (mean ms): ", (Statistics.mean(times)) * 1e3)
 
-# Don't use @benchmark for multiple long runs - it eats and eats memory even with gc enabled?
-# Run 1 to N times, discarding the first timing.
+# Schelling
 times = []
 for i in 0:SAMPLE_COUNT
     (model, agent_step!, model_step!) = Models.schelling(griddims = (500, 500), numagents = 200000)
@@ -60,10 +62,10 @@ for i in 0:SAMPLE_COUNT
         append!(times, step_stats.time)
     end
 end
-println("Agnets.jl schelling times (ms)", map(x -> x * 1e3, times))
+println("Agents.jl schelling times (ms)", map(x -> x * 1e3, times))
 println("Agents.jl Schelling (mean ms): ", (Statistics.mean(times)) * 1e3)
-# # Don't use @benchmark for multiple long runs - it eats and eats memory even with gc enabled?
-# # Run 1 to N times, discarding the first timing.
+
+# Forest fire
 # times = []
 # for i in 0:SAMPLE_COUNT
 #     (model, agent_step!, model_step!) = Models.forest_fire()
@@ -74,6 +76,6 @@ println("Agents.jl Schelling (mean ms): ", (Statistics.mean(times)) * 1e3)
 #         append!(times, step_stats.time)
 #     end
 # end
-# println("Agnets.jl ForestFire times (ms)", map(x -> x * 1e3, times))
+# println("Agents.jl ForestFire times (ms)", map(x -> x * 1e3, times))
 # println("Agents.jl ForestFire (mean ms): ", (Statistics.mean(times)) * 1e3)
 
