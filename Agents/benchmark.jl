@@ -13,13 +13,13 @@ SAMPLE_COUNT = 10
 times = []
 for i in 0:SAMPLE_COUNT
     (model, agent_step!, model_step!) = Models.flocking(
-        n_birds = 100000,
+        n_birds = 80000,
         separation = 1,
         cohere_factor = 0.03,
         separate_factor = 0.015,
         match_factor = 0.05,
         visual_distance = 5.0,
-        extent = (1000, 1000),
+        extent = (400, 400),
     )
     step_stats = @timed step!(model, agent_step!, model_step!, 100)
     if i > 0
