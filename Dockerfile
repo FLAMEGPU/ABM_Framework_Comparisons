@@ -113,3 +113,12 @@ RUN set -eux; \
     pwd; \
     ls; \
     julia -e 'using Pkg; Pkg.activate("."); Pkg.instantiate();'
+
+
+# Copy the benchmark scripts / sources into /opt/ABM_Framework_Comparisons
+COPY . /opt/ABM_Framework_Comparisons
+
+# Configure and build flamegpu binaries into /opt/ABM_Framework_Comparisons
+WORKDIR /opt/ABM_Framework_Comparisons
+
+RUN cmake -S FLAMEGPU2 -B FLAMEGPU2/build .. -DCUDA_ARCH=70,80 -DSEATBELTS=OFF && cmake --build FLAMEGPU2/build --target all -j `nproc` && rm -rf FLAMEGPU2/build/CMakeCache.txt  FLAMEGPU2/build/CMakeFiles FLAMEGPU2/build/Makefile FLAMEGPU2/build/_deps FLAMEGPU2/build/compile_commands.json 

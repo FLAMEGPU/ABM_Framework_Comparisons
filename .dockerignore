@@ -1,0 +1,13 @@
+# Prevent unwanted files from being packaeged into the container
+# Ignore the git directory and other git specific files
+.git
+.gitignore
+*.sif
+# Ignore any dockerfiles
+Dockerfile
+# Ignore any singularity / apptainer containers
+*.sif
+# Ignore a vs code  direcotry if there is one
+.vscode
+# Ignore any build directories from the flamegpu directory
+FLAMEGPU2/build*

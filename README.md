@@ -40,6 +40,7 @@ Currently several simulators are not being compared due to container issues, sev
 + [ ] Multi-stage docker build with a development and runtime image would improve file size and portability (with an entrypoint to `runall.sh`)
 + [ ] Provide a smaller dockerfile not based on a CUDA dockerfile for non-GPU benchmarking.
 + [ ] Repast4Py would be a good addition.
++ [ ] Scripts included hardcoded path locations (from upstream, and for expected locations in-container).
 
 ## Containers
 
@@ -85,7 +86,64 @@ Then can run via:
 apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif nvidia-smi
 ```
 
-### Compiling the FLAME GPU 2 executables
+### Running packaged benchmarks
+
+The docker / apptainer containers include a copy of this repository in `/opt/ABM_Framework_Comparisons`, including the FLAME GPU binaries.
+
+The packaged FLAMEGPU2 binaries are compiled for SM 70 and SM 80 GPUs (Volta, Turing, Ampere and Ada), and will also run on SM 90 (Hopper) GPUs via embedded PTX, which may result in slightly slower performance for the first repetition.
+
+To run the packaged version of the benchmarks:
+
+```bash
+# run all using docker
+sudo docker run --rm --gpus all abm-framework-comparisons bash -c "./runall.sh" 
+# run all using apptainer
+apptainer exec --nv --pwd /opt/ABM_Framework_Comparisons abm-framework-comparisons.sif bash -c "./runall.sh" 
+
+```
+
+Or to run individual benchmarks using Docker:
+
+```bash
+# flamegpu
+sudo docker run --rm --gpus all abm-framework-comparisons bash -c "python3 FLAMEGPU2/benchmark.py" 
+# julia
+sudo docker run --rm --gpus all abm-framework-comparisons bash -c "julia --project=@. Agents/benchmark.jl" 
+# Netlogo
+sudo docker run --rm --gpus all abm-framework-comparisons bash -c "./netlogo_flock.sh" 
+sudo docker run --rm --gpus all abm-framework-comparisons bash -c "./netlogo_s.sh"
+# Mesa 
+sudo docker run --rm --gpus all abm-framework-comparisons bash -c "python3 Mesa/Flocking/benchmark.py" 
+sudo docker run --rm --gpus all abm-framework-comparisons bash -c "python3 Mesa/Schelling/benchmark.py"
+```
+
+Or to run individual benchmarks using Apptainer:
+
+```bash
+# flamegpu
+apptainer exec --nv --pwd /opt/ABM_Framework_Comparisons abm-framework-comparisons.sif bash -c "python3 FLAMEGPU2/benchmark.py" 
+# julia
+apptainer exec --nv --pwd /opt/ABM_Framework_Comparisons abm-framework-comparisons.sif bash -c "julia --project=@. Agents/benchmark.jl" 
+# Netlogo
+apptainer exec --nv --pwd /opt/ABM_Framework_Comparisons abm-framework-comparisons.sif bash -c "./netlogo_flock.sh" 
+apptainer exec --nv --pwd /opt/ABM_Framework_Comparisons abm-framework-comparisons.sif bash -c "./netlogo_s.sh"
+# Mesa 
+apptainer exec --nv --pwd /opt/ABM_Framework_Comparisons abm-framework-comparisons.sif bash -c "python3 Mesa/Flocking/benchmark.py" 
+apptainer exec --nv --pwd /opt/ABM_Framework_Comparisons abm-framework-comparisons.sif bash -c "python3 Mesa/Schelling/benchmark.py"
+
+```
+
+sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons ./netlogo_flock.sh
+sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons ./netlogo_s.sh
+
+### Using the container for dependencies only
+
+It is also possible to just use the container for build dependencies, but not use the packaged version of scripts/models. E.g. if you wish to modify any files without rebuilding them into the container.
+
+
+In this case, the working directory must be bound to the container, 
+
+#### Compiling the FLAME GPU 2 executables
 
 Unlike Agents.jl, Mason, Messa and NetLogo, The included FLAMEGPU2 models are not implemented in an interpreted language (although python3 bindings are available), so the examples must be compiled prior to their use. This requires `CMake`, `git` `NVCC`, and a C++17 host compiler, such as `gcc >= 9`.
 
@@ -109,7 +167,7 @@ This wil have produced binaries in `FLAMEGPU/build/bin/Release/` which can be ex
 
 Note the generated binaries may not be compatible with your host system.
 
-### Running all benchmarks
+#### Running all benchmarks
 
 Running the existing `runall.sh`
 
@@ -122,11 +180,11 @@ sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-compariso
 apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif ./runall.sh
 ```
 
-### Running individual benchmarks
+#### Running individual benchmarks
 
 If you do not wish to run the full benchmark suite in one go, individual executions can be performed / tested by executing individual simulations manually:
 
-#### Mesa
+##### Mesa
 
 ```bash
 sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons bash -c "python3 Mesa/Flocking/benchmark.py"
@@ -138,7 +196,7 @@ apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif 
 apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif bash -c "python3 Mesa/Schelling/benchmark.py"
 ```
 
-#### Agents.jl
+##### Agents.jl
 
 ```bash
 sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons bash -c "julia --project=@. Agents/benchmark.jl"
@@ -148,7 +206,7 @@ sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-compariso
 apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif bash -c "julia --project=@. Agents/benchmark.jl"
 ```
 
-#### FLAMEGPU2
+##### FLAMEGPU2
 
 Once the FLAMEGPU 2 binaries have been compiled as above, they can be executed using the benchmark script, or individual runs by executing the binaries directly:
 
@@ -168,7 +226,7 @@ apptainer exec --nv --bind $(pwd):/app --pwd /app abm-framework-comparisons.sif 
 
 Mason runs are not currently supported/tested via the container. -->
 
-#### NetLogo
+##### NetLogo
 
 ```bash
 sudo docker run --rm --gpus all -v $(pwd):/app -w "/app" abm-framework-comparisons ./netlogo_flock.sh
