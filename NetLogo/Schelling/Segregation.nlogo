@@ -722,7 +722,7 @@ NetLogo 6.2.0
       <value value="&quot;square-x&quot;"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="agents">
-      <value value="800000"/>
+      <value value="200000"/>
     </enumeratedValueSet>
   </experiment>
 </experiments>
