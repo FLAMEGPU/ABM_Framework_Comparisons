@@ -28,7 +28,7 @@ schelling = SchellingModel(
 tt = timeit.Timer('runthemodel(schelling)', setup=setup)
 SAMPLES=3
 a = tt.repeat(SAMPLES, 1)
-print("Mesa Flocking times (ms):", list(map(lambda x: x * 1e3, a)))
-print("Mesa Flocking (mean ms):", statistics.mean(a)*1e3)
+print("Mesa schelling times (ms):", list(map(lambda x: x * 1e3, a)))
+print("Mesa schelling (mean ms):", statistics.mean(a)*1e3)
 
 
