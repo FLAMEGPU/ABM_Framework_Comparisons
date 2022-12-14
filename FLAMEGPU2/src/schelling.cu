@@ -6,7 +6,7 @@
 #include <chrono>
 
 #include "flamegpu/flamegpu.h"
-#include "flamegpu/util/detail/SteadyClockTimer.h"
+#include "flamegpu/detail/SteadyClockTimer.h"
 
 // Configurable properties
 unsigned int GRID_WIDTH = 500;
@@ -35,7 +35,7 @@ FLAMEGPU_AGENT_FUNCTION(determine_status, flamegpu::MessageArray2D, flamegpu::Me
 
     // Iterate 3x3 Moore neighbourhood (this does not include the central cell)
     unsigned int my_type = FLAMEGPU->getVariable<unsigned int>("type");
-    for (auto &message : FLAMEGPU->message_in.wrap(my_x, my_y)) {
+    for (auto message : FLAMEGPU->message_in.wrap(my_x, my_y)) {
         int message_type = message.getVariable<unsigned int>("type");
         same_type_neighbours += my_type == message_type;
         diff_type_neighbours += (my_type != message_type) && (message_type != UNOCCUPIED);
@@ -73,7 +73,7 @@ FLAMEGPU_AGENT_FUNCTION(bid_for_location, flamegpu::MessageArray, flamegpu::Mess
     unsigned int selected_index = FLAMEGPU->random.uniform<unsigned int>(0, FLAMEGPU->environment.getProperty<unsigned int>("spaces_available") - 1);
 
     // Get the location at that index
-    const auto& message = FLAMEGPU->message_in.at(selected_index);
+    const auto message = FLAMEGPU->message_in.at(selected_index);
     const flamegpu::id_t selected_location = message.getVariable<flamegpu::id_t>("id");
 
     // Bid for that location
@@ -85,7 +85,7 @@ FLAMEGPU_AGENT_FUNCTION(bid_for_location, flamegpu::MessageArray, flamegpu::Mess
 // @todo - device exception triggered when running 
 FLAMEGPU_AGENT_FUNCTION(select_winners, flamegpu::MessageBucket, flamegpu::MessageArray) {
     // First agent in the bucket wins
-    for (const auto& message : FLAMEGPU->message_in(FLAMEGPU->getID() - 1)) {
+    for (const auto message : FLAMEGPU->message_in(FLAMEGPU->getID() - 1)) {
         flamegpu::id_t winning_id = message.getVariable<flamegpu::id_t>("id");
         FLAMEGPU->setVariable<unsigned int>("next_type", message.getVariable<unsigned int>("type"));
         FLAMEGPU->setVariable<unsigned int>("available", 0);
@@ -97,7 +97,7 @@ FLAMEGPU_AGENT_FUNCTION(select_winners, flamegpu::MessageBucket, flamegpu::Messa
 }
 
 FLAMEGPU_AGENT_FUNCTION(has_moved, flamegpu::MessageArray, flamegpu::MessageNone) {
-    const auto& message = FLAMEGPU->message_in.at(FLAMEGPU->getID() - 1);
+    const auto message = FLAMEGPU->message_in.at(FLAMEGPU->getID() - 1);
     if (message.getVariable<unsigned int>("won")) {
         FLAMEGPU->setVariable<unsigned int>("movement_resolved", 1);
     }
@@ -114,30 +114,30 @@ FLAMEGPU_AGENT_FUNCTION(update_locations, flamegpu::MessageNone, flamegpu::Messa
 }
 
 int main(int argc, const char ** argv) {
-    NVTX_RANGE("main");
-    flamegpu::util::detail::SteadyClockTimer mainTimer = {};
+    flamegpu::util::nvtx::Range("main");
+    flamegpu::detail::SteadyClockTimer mainTimer = {};
     mainTimer.start();
-    flamegpu::util::detail::SteadyClockTimer prePopulationTimer = {};
+    flamegpu::detail::SteadyClockTimer prePopulationTimer = {};
     prePopulationTimer.start();
 
     // Define the model
     flamegpu::ModelDescription model("Schelling_segregation");
 
     // Define the message list(s)
-    flamegpu::MessageArray2D::Description &message = model.newMessage<flamegpu::MessageArray2D>("type_message");
+    flamegpu::MessageArray2D::Description message = model.newMessage<flamegpu::MessageArray2D>("type_message");
     message.newVariable<unsigned int>("type");
     message.setDimensions(GRID_WIDTH, GRID_WIDTH);
 
     // Define the agent types
     // Agents representing the cells.
-    flamegpu::AgentDescription  &agent = model.newAgent("agent");
+    flamegpu::AgentDescription  agent = model.newAgent("agent");
     agent.newVariable<unsigned int, 2>("pos");
     agent.newVariable<unsigned int>("type");
     agent.newVariable<unsigned int>("next_type");
     agent.newVariable<unsigned int>("happy");
     agent.newVariable<unsigned int>("available");
     agent.newVariable<unsigned int>("movement_resolved");
-#ifdef VISUALISATION
+#ifdef FLAMEGPU_VISUALISATION
     // Redundant seperate floating point position vars for vis
     agent.newVariable<float>("x");
     agent.newVariable<float>("y");
@@ -155,29 +155,29 @@ int main(int argc, const char ** argv) {
     submodel.addExitCondition(movement_resolved);
     {
         // Define the submodel environemnt
-        flamegpu::EnvironmentDescription& env = submodel.Environment();
+        flamegpu::EnvironmentDescription env = submodel.Environment();
         env.newProperty<unsigned int>("spaces_available", 0);
 
         // Define message lists used within the submodel
         {
-            flamegpu::MessageArray::Description &message = submodel.newMessage<flamegpu::MessageArray>("available_location_message");
+            flamegpu::MessageArray::Description message = submodel.newMessage<flamegpu::MessageArray>("available_location_message");
             message.newVariable<flamegpu::id_t>("id");
             message.setLength(GRID_WIDTH*GRID_WIDTH);
         }
         {
-            flamegpu::MessageBucket::Description &message = submodel.newMessage<flamegpu::MessageBucket>("intent_to_move_message");
+            flamegpu::MessageBucket::Description message = submodel.newMessage<flamegpu::MessageBucket>("intent_to_move_message");
             message.newVariable<flamegpu::id_t>("id");
             message.newVariable<unsigned int>("type");
             message.setBounds(0, GRID_WIDTH * GRID_WIDTH);
         }
         {
-            flamegpu::MessageArray::Description &message = submodel.newMessage<flamegpu::MessageArray>("movement_won_message");
+            flamegpu::MessageArray::Description message = submodel.newMessage<flamegpu::MessageArray>("movement_won_message");
             message.newVariable<unsigned int>("won");
             message.setLength(GRID_WIDTH*GRID_WIDTH);
         }
 
         // Define agents within the submodel
-        flamegpu::AgentDescription  &agent = submodel.newAgent("agent");
+        flamegpu::AgentDescription  agent = submodel.newAgent("agent");
         agent.newVariable<unsigned int, 2>("pos");
         agent.newVariable<unsigned int>("type");
         agent.newVariable<unsigned int>("next_type");
@@ -186,16 +186,16 @@ int main(int argc, const char ** argv) {
         agent.newVariable<unsigned int>("movement_resolved");
 
         // Functions
-        auto& outputLocationsFunction = agent.newFunction("output_available_locations", output_available_locations);
+        auto outputLocationsFunction = agent.newFunction("output_available_locations", output_available_locations);
         outputLocationsFunction.setMessageOutput("available_location_message");
         outputLocationsFunction.setFunctionCondition(is_available);
 
-        auto& bidFunction = agent.newFunction("bid_for_location", bid_for_location);
+        auto bidFunction = agent.newFunction("bid_for_location", bid_for_location);
         bidFunction.setFunctionCondition(is_moving);
         bidFunction.setMessageInput("available_location_message");
         bidFunction.setMessageOutput("intent_to_move_message");
 
-        auto& selectWinnersFunction = agent.newFunction("select_winners", select_winners);
+        auto selectWinnersFunction = agent.newFunction("select_winners", select_winners);
         selectWinnersFunction.setMessageInput("intent_to_move_message");
         selectWinnersFunction.setMessageOutput("movement_won_message");
         selectWinnersFunction.setMessageOutputOptional(true);
@@ -205,57 +205,57 @@ int main(int argc, const char ** argv) {
         // Specify control flow for the submodel (@todo - dependencies)
         // Available agents output their location (indexed by thread ID)
         {
-            flamegpu::LayerDescription &layer = submodel.newLayer();
+            flamegpu::LayerDescription layer = submodel.newLayer();
             layer.addAgentFunction(output_available_locations);
         }
         // Count the number of available spaces
         {
-            flamegpu::LayerDescription &layer = submodel.newLayer();
+            flamegpu::LayerDescription layer = submodel.newLayer();
             layer.addHostFunction(count_available_spaces);
         }
         // Unhappy agents bid for a new location
         {
-            flamegpu::LayerDescription &layer = submodel.newLayer();
+            flamegpu::LayerDescription layer = submodel.newLayer();
             layer.addAgentFunction(bid_for_location);
         }
         // Available locations check if anyone wants to move to them. If so, approve one and mark as unavailable
         // Update next type to the type of the mover
         // Output a message to inform the mover that they have been successful
         {
-            flamegpu::LayerDescription &layer = submodel.newLayer();
+            flamegpu::LayerDescription layer = submodel.newLayer();
             layer.addAgentFunction(select_winners);
         }
         // Movers mark themselves as resolved
         {
-            flamegpu::LayerDescription &layer = submodel.newLayer();
+            flamegpu::LayerDescription layer = submodel.newLayer();
             layer.addAgentFunction(has_moved);
         }
     }
 
     // Attach the submodel to the model, 
-    flamegpu::SubModelDescription& plan_movement = model.newSubModel("plan_movement", submodel);
+    flamegpu::SubModelDescription plan_movement = model.newSubModel("plan_movement", submodel);
     // Bind the agents within the submodel to the same agents outside of the submodel
     plan_movement.bindAgent("agent", "agent", true, true);
 
     // Defien the control flow of the outer/parent model (@todo - use dependencies)
     {   // Layer #1
-        flamegpu::LayerDescription  &layer = model.newLayer();
+        flamegpu::LayerDescription layer = model.newLayer();
         layer.addAgentFunction(output_type);
     }
     {   // Layer #2
-        flamegpu::LayerDescription  &layer = model.newLayer();
+        flamegpu::LayerDescription layer = model.newLayer();
         layer.addAgentFunction(determine_status);
     }
     {
-        flamegpu::LayerDescription &layer = model.newLayer();
+        flamegpu::LayerDescription layer = model.newLayer();
         layer.addSubModel(plan_movement);
     }
     {
-        flamegpu::LayerDescription &layer = model.newLayer();
+        flamegpu::LayerDescription layer = model.newLayer();
         layer.addAgentFunction(update_locations);
     }
     {   // Trying calling this again to fix vis
-        flamegpu::LayerDescription  &layer = model.newLayer();
+        flamegpu::LayerDescription layer = model.newLayer();
         layer.addAgentFunction(determine_status);
     }
 
@@ -266,15 +266,15 @@ int main(int argc, const char ** argv) {
      * Create visualisation
      * @note FLAMEGPU2 doesn't currently have proper support for discrete/2d visualisations
      */
-#ifdef VISUALISATION
-    flamegpu::visualiser::ModelVis  &visualisation = cudaSimulation.getVisualisation();
+#ifdef FLAMEGPU_VISUALISATION
+    flamegpu::visualiser::ModelVis visualisation = cudaSimulation.getVisualisation();
     {
-        visualisation.setSimulationSpeed(2);
+        visualisation.setSimulationSpeed(10); // slow down the simulation for visualisation purposes
         visualisation.setInitialCameraLocation(GRID_WIDTH / 2.0f, GRID_WIDTH / 2.0f, 225.0f);
         visualisation.setInitialCameraTarget(GRID_WIDTH / 2.0f, GRID_WIDTH /2.0f, 0.0f);
         visualisation.setCameraSpeed(0.001f * GRID_WIDTH);
         visualisation.setViewClips(0.1f, 5000);
-        auto &agt = visualisation.addAgent("agent");
+        auto agt = visualisation.addAgent("agent");
         // Position vars are named x, y, z; so they are used by default
         agt.setModel(flamegpu::visualiser::Stock::Models::CUBE);  // 5 unwanted faces!
         agt.setModelScale(1.0f);
@@ -292,7 +292,7 @@ int main(int argc, const char ** argv) {
     prePopulationTimer.stop();
     fprintf(stdout, "pre population (s): %.6f\n", prePopulationTimer.getElapsedSeconds());
 
-    flamegpu::util::detail::SteadyClockTimer populationGenerationTimer = {};
+    flamegpu::detail::SteadyClockTimer populationGenerationTimer = {};
     populationGenerationTimer.start();
     // Generate a population if not provided from disk
     if (cudaSimulation.getSimulationConfig().input_file.empty()) {
@@ -328,7 +328,7 @@ int main(int argc, const char ** argv) {
                 instance.setVariable<unsigned int>("type", UNOCCUPIED);
             }
             instance.setVariable<unsigned int>("happy", 0);
-#ifdef VISUALISATION
+#ifdef FLAMEGPU_VISUALISATION
             // Redundant separate floating point position vars for vis
             instance.setVariable<float>("x", static_cast<float>(x));
             instance.setVariable<float>("y", static_cast<float>(y));
@@ -345,7 +345,7 @@ int main(int argc, const char ** argv) {
     // Print the exeuction time to stdout
     fprintf(stdout, "simulate (s): %.6f\n", cudaSimulation.getElapsedTimeSimulation());
 
-#ifdef VISUALISATION
+#ifdef FLAMEGPU_VISUALISATION
     visualisation.join();
 #endif
 

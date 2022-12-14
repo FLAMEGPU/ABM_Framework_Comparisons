@@ -2,7 +2,7 @@
 #include <cstdlib>
 
 #include "flamegpu/flamegpu.h"
-#include "flamegpu/util/detail/SteadyClockTimer.h"
+#include "flamegpu/detail/SteadyClockTimer.h"
 
 /**
  * FLAME GPU 2 implementation of the Boids flocking model in 2D, using spatial2D messaging.
@@ -142,7 +142,7 @@ FLAMEGPU_AGENT_FUNCTION(inputdata, flamegpu::MessageSpatial2D, flamegpu::Message
     const float INTERACTION_RADIUS = FLAMEGPU->environment.getProperty<float>("INTERACTION_RADIUS");
     const float SEPARATION_RADIUS = FLAMEGPU->environment.getProperty<float>("SEPARATION_RADIUS");
     // Iterate location messages, accumulating relevant data and counts.
-    for (const auto &message : FLAMEGPU->message_in.wrap(agent_x, agent_y)) {
+    for (const auto message : FLAMEGPU->message_in.wrap(agent_x, agent_y)) {
         // Ignore self messages.
         if (message.getVariable<flamegpu::id_t>("id") != id) {
             // Get the message location and velocity.
@@ -250,14 +250,14 @@ FLAMEGPU_AGENT_FUNCTION(inputdata, flamegpu::MessageSpatial2D, flamegpu::Message
 }
 
 int main(int argc, const char ** argv) {
-    flamegpu::util::detail::SteadyClockTimer mainTimer = {};
+    flamegpu::detail::SteadyClockTimer mainTimer = {};
     mainTimer.start();
-    flamegpu::util::detail::SteadyClockTimer prePopulationTimer = {};
+    flamegpu::detail::SteadyClockTimer prePopulationTimer = {};
     prePopulationTimer.start();
     flamegpu::ModelDescription model("Boids Spatial3D");
 
     // Environment variables with default values
-    flamegpu::EnvironmentDescription &env = model.Environment();
+    flamegpu::EnvironmentDescription env = model.Environment();
 
     // Population size to generate, if no agents are loaded from disk
     env.newProperty("POPULATION_TO_GENERATE", 80000u);
@@ -268,7 +268,7 @@ int main(int argc, const char ** argv) {
     env.newProperty("MAX_POSITION", 400.0f);
 
     // Initialisation parameter(s)
-    env.newProperty("INITIAL_SPEED", 1.0f); // always start with a spee dof 
+    env.newProperty("INITIAL_SPEED", 1.0f); // always start with a speed of 1.0
 
     // Interaction radius
     env.newProperty("INTERACTION_RADIUS", 5.0f);
@@ -285,7 +285,7 @@ int main(int argc, const char ** argv) {
 
 
     // Define the Location 2D spatial message list
-    flamegpu::MessageSpatial2D::Description &message = model.newMessage<flamegpu::MessageSpatial2D>("location");
+    flamegpu::MessageSpatial2D::Description message = model.newMessage<flamegpu::MessageSpatial2D>("location");
     // Set the range and bounds.
     message.setRadius(env.getProperty<float>("INTERACTION_RADIUS"));
     message.setMin(env.getProperty<float>("MIN_POSITION"), env.getProperty<float>("MIN_POSITION"));
@@ -299,15 +299,15 @@ int main(int argc, const char ** argv) {
     message.newVariable<float>("fz");
 
     // Boid agent
-    flamegpu::AgentDescription &agent = model.newAgent("Boid");
+    flamegpu::AgentDescription agent = model.newAgent("Boid");
     agent.newVariable<float>("x");
     agent.newVariable<float>("y");
     agent.newVariable<float>("fx");
     agent.newVariable<float>("fy");
     // Define the agents methods
-    flamegpu::AgentFunctionDescription& outputdataDescription = agent.newFunction("outputdata", outputdata);
+    flamegpu::AgentFunctionDescription outputdataDescription = agent.newFunction("outputdata", outputdata);
     outputdataDescription.setMessageOutput("location");
-    flamegpu::AgentFunctionDescription& inputdataDescription = agent.newFunction("inputdata", inputdata);
+    flamegpu::AgentFunctionDescription inputdataDescription = agent.newFunction("inputdata", inputdata);
     inputdataDescription.setMessageInput("location");
 
     // Specify agent method dependencies, i.e. the exeuction order within a layer.
@@ -320,29 +320,29 @@ int main(int argc, const char ** argv) {
     flamegpu::CUDASimulation simulator(model);
 
     // If enabled, define the visualsiation for the model
-#ifdef VISUALISATION
-    flamegpu::visualiser::ModelVis &visualisation = simulator.getVisualisation();
+#ifdef FLAMEGPU_VISUALISATION
+    flamegpu::visualiser::ModelVis visualisation = simulator.getVisualisation();
     {
-        flamegpu::EnvironmentDescription &env = model.Environment();
+        visualisation.setSimulationSpeed(10); // slow down the simulation for visualisation purposes
+        flamegpu::EnvironmentDescription env = model.Environment();
         const float ENV_WIDTH = env.getProperty<float>("MAX_POSITION") - env.getProperty<float>("MIN_POSITION");
         const float ENV_CENTER = env.getProperty<float>("MIN_POSITION") + (ENV_WIDTH) / 2.0f;
-        const float INIT_CAM_DISTANCE = 1.05f;
         const float INIT_CAM = env.getProperty<float>("MAX_POSITION") * 1.25f;
-        visualisation.setInitialCameraLocation(ENV_CENTER, ENV_CENTER, INIT_CAM_DISTANCE);
+        visualisation.setInitialCameraLocation(ENV_CENTER, ENV_CENTER, INIT_CAM);
         visualisation.setInitialCameraTarget(ENV_CENTER, ENV_CENTER, 0.0f);
         visualisation.setCameraSpeed(0.001f * ENV_WIDTH);
-        visualisation.setViewClips(0.00001f, 50);
-        auto &circ_agt = visualisation.addAgent("Boid");
+        visualisation.setViewClips(0.00001f, ENV_WIDTH);
+        auto agentVisualiser = visualisation.addAgent("Boid");
         // Position vars are named x, y so they are used by default
-        circ_agt.setForwardXVariable("fx");
-        circ_agt.setForwardYVariable("fy");
-        circ_agt.setModel(flamegpu::visualiser::Stock::Models::STUNTPLANE);
-        circ_agt.setModelScale(env.getProperty<float>("SEPARATION_RADIUS")/3.0f);
+        agentVisualiser.setForwardXVariable("fx");
+        agentVisualiser.setForwardYVariable("fy");
+        agentVisualiser.setModel(flamegpu::visualiser::Stock::Models::STUNTPLANE);
+        agentVisualiser.setModelScale(env.getProperty<float>("SEPARATION_RADIUS")/3.0f);
         // Add a settings UI
         flamegpu::visualiser::PanelVis ui = visualisation.newUIPanel("Environment");
         ui.newStaticLabel("Interaction");
-        ui.newEnvironmentPropertyDrag<float>("INTERACTION_RADIUS", 0.0f, 0.05f, 0.001f);
-        ui.newEnvironmentPropertyDrag<float>("SEPARATION_RADIUS", 0.0f, 0.05f, 0.001f);
+        ui.newEnvironmentPropertyDrag<float>("INTERACTION_RADIUS", 0.0f, env.getProperty<float>("INTERACTION_RADIUS"), 0.01f); // Can't go bigger than the comms radius, which is fixed at compile time.
+        ui.newEnvironmentPropertyDrag<float>("SEPARATION_RADIUS", 0.0f, env.getProperty<float>("INTERACTION_RADIUS"), 0.01f); // Can't go bigger than the iniital interaction radius which is fixed at compile time.
         ui.newStaticLabel("Environment Scalars");
         ui.newEnvironmentPropertyDrag<float>("TIME_SCALE", 0.0f, 1.0f, 0.0001f);
         ui.newEnvironmentPropertyDrag<float>("GLOBAL_SCALE", 0.0f, 0.5f, 0.001f);
@@ -359,12 +359,12 @@ int main(int argc, const char ** argv) {
     prePopulationTimer.stop();
     fprintf(stdout, "pre population (s): %.6f\n", prePopulationTimer.getElapsedSeconds());
 
-    flamegpu::util::detail::SteadyClockTimer populationGenerationTimer = {};
+    flamegpu::detail::SteadyClockTimer populationGenerationTimer = {};
     populationGenerationTimer.start();
 
     // If no agent states were provided, generate a population of randomly distributed agents within the environment space
     if (simulator.getSimulationConfig().input_file.empty()) {
-        flamegpu::EnvironmentDescription &env = model.Environment();
+        flamegpu::EnvironmentDescription env = model.Environment();
         // Uniformly distribute agents within space, with uniformly distributed initial velocity.
         // c++ random number generator engine
         std::mt19937_64 rngEngine(simulator.getSimulationConfig().random_seed);
@@ -409,7 +409,7 @@ int main(int argc, const char ** argv) {
     fprintf(stdout, "simulate (s): %.6f\n", simulator.getElapsedTimeSimulation());
 
     // Join the visualsition if required
-#ifdef VISUALISATION
+#ifdef FLAMEGPU_VISUALISATION
     visualisation.join();
 #endif
 
