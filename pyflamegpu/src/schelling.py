@@ -2,6 +2,11 @@ import pyflamegpu
 import typing
 import sys, random, time
 
+if "--disable-rtc-cache" in sys.argv:
+    rtc_cache = pyflamegpu.JitifyCache.getInstance()
+    rtc_cache.useMemoryCache(False)
+    rtc_cache.useDiskCache(False)
+
 # Configurable properties (note these are not dynamically updated in current agent functions)
 GRID_WIDTH: typing.Final = 500
 POPULATED_COUNT: typing.Final = 200000

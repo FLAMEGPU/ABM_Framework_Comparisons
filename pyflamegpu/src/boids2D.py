@@ -3,6 +3,11 @@ import typing
 import sys, random, time
 import numpy as np
 
+if "--disable-rtc-cache" in sys.argv:
+    rtc_cache = pyflamegpu.JitifyCache.getInstance()
+    rtc_cache.useMemoryCache(False)
+    rtc_cache.useDiskCache(False)
+
 """
  * pyFLAME GPU 2 implementation of the Boids flocking model in 2D, using spatial2D messaging.
  * This is based on the FLAME GPU 1 implementation, but with dynamic generation of agents. 
