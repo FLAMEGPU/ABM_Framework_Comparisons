@@ -298,7 +298,6 @@ message.newVariableID("id")
 # Spatial 2D messages implicitly have float members x and y, so they do not need to be defined
 message.newVariableFloat("fx")
 message.newVariableFloat("fy")
-message.newVariableFloat("fz")
 
 # Boid agent
 agent = model.newAgent("Boid")
