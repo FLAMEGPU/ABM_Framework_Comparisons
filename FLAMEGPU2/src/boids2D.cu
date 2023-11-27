@@ -76,7 +76,7 @@ FLAMEGPU_HOST_DEVICE_FUNCTION void vec3Normalize(float &x, float &y) {
 }
 
 /**
- * Ensure that the x and y position are withini the defined boundary area, wrapping to the far side if out of bounds.
+ * Ensure that the x and y position are within the defined boundary area, wrapping to the far side if out of bounds.
  * Performs the operation in place
  * @param x x component of the vector
  * @param y y component of the vector
@@ -126,7 +126,7 @@ FLAMEGPU_AGENT_FUNCTION(inputdata, flamegpu::MessageSpatial2D, flamegpu::Message
     float agent_fx = FLAMEGPU->getVariable<float>("fx");
     float agent_fy = FLAMEGPU->getVariable<float>("fy");
 
-    // Boids percieved center
+    // Boids perceived center
     float perceived_centre_x = 0.0f;
     float perceived_centre_y = 0.0f;
     int perceived_count = 0;
@@ -234,7 +234,7 @@ FLAMEGPU_AGENT_FUNCTION(inputdata, flamegpu::MessageSpatial2D, flamegpu::Message
     agent_x += agent_fx * TIME_SCALE;
     agent_y += agent_fy * TIME_SCALE;
 
-    // Wramp position
+    // Wrap position
     const float MIN_POSITION = FLAMEGPU->environment.getProperty<float>("MIN_POSITION");
     const float MAX_POSITION = FLAMEGPU->environment.getProperty<float>("MAX_POSITION");
     wrapPosition(agent_x, agent_y, MIN_POSITION, MAX_POSITION);
@@ -296,7 +296,6 @@ int main(int argc, const char ** argv) {
     // Spatial 2D messages implicitly have float members x and y, so they do not need to be defined
     message.newVariable<float>("fx");
     message.newVariable<float>("fy");
-    message.newVariable<float>("fz");
 
     // Boid agent
     flamegpu::AgentDescription agent = model.newAgent("Boid");
@@ -319,7 +318,7 @@ int main(int argc, const char ** argv) {
     // Create Model Runner
     flamegpu::CUDASimulation simulator(model);
 
-    // If enabled, define the visualsiation for the model
+    // If enabled, define the visualisation for the model
 #ifdef FLAMEGPU_VISUALISATION
     flamegpu::visualiser::ModelVis visualisation = simulator.getVisualisation();
     {
@@ -405,10 +404,10 @@ int main(int argc, const char ** argv) {
     // Execute the simulation
     simulator.simulate();
 
-    // Print the exeuction time to stdout
+    // Print the execution time to stdout
     fprintf(stdout, "simulate (s): %.6f\n", simulator.getElapsedTimeSimulation());
 
-    // Join the visualsition if required
+    // Join the visualisation if required
 #ifdef FLAMEGPU_VISUALISATION
     visualisation.join();
 #endif
