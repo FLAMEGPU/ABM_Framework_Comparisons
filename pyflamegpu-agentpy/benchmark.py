@@ -94,7 +94,7 @@ else:
      print(f"Error: pyFLAMEGPU flocking model ({flocking_model_path}) does not exist. Please check paths are correct.", file=sys.stderr)
 
 # Benchmark Schelling
-schelling_model_path = SCRIPT_PATH / f"{BUILD_DIR}/bin/{CONFIG}/schelling"
+schelling_model_path = SCRIPT_PATH / "src/schelling.py"
 if schelling_model_path.is_file():
     pre_pop_times = []
     pop_gen_times = []
