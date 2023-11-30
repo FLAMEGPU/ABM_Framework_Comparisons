@@ -99,20 +99,14 @@ def inputdata(message_in: pyflamegpu.MessageSpatial2D, message_out: pyflamegpu.M
         global_velocity_y /= perceived_count
 
         # Rule 1) Steer towards perceived centre of flock (Cohesion)
-        steer_velocity_x = 0.0
-        steer_velocity_y = 0.0
-
         STEER_SCALE = pyflamegpu.environment.getPropertyFloat("STEER_SCALE")
         steer_velocity_x = (perceived_centre_x - agent_x) * STEER_SCALE
         steer_velocity_y = (perceived_centre_y - agent_y) * STEER_SCALE
 
-        velocity_change_x += steer_velocity_x;
-        velocity_change_y += steer_velocity_y;
+        velocity_change_x += steer_velocity_x
+        velocity_change_y += steer_velocity_y
 
         # Rule 2) Match neighbours speeds (Alignment)
-        match_velocity_x = 0.0
-        match_velocity_y = 0.0
-
         MATCH_SCALE = pyflamegpu.environment.getPropertyFloat("MATCH_SCALE")
         match_velocity_x = global_velocity_x * MATCH_SCALE
         match_velocity_y = global_velocity_y * MATCH_SCALE
@@ -211,7 +205,7 @@ env.newPropertyFloat("SEPARATION_RADIUS", 1.0)
 
 # Global Scalers
 env.newPropertyFloat("TIME_SCALE", 1.0) # 1.0 for benchmarking to behave the same as the other simulators.
-env.newPropertyFloat("GLOBAL_SCALE", 0.5) # 1.0 for comparing to other benchmarks
+env.newPropertyFloat("GLOBAL_SCALE",1.0) # 1.0 for comparing to other benchmarks
 
 # Rule scalers
 env.newPropertyFloat("STEER_SCALE", 0.03) # cohere scale?  0.03
@@ -290,7 +284,7 @@ if pyflamegpu.VISUALISATION:
 # Initialisation
 simulator.initialise(sys.argv)
 prePopulationTimer_stop = time.monotonic()
-print("pre population (s): %.6f\n"%(prePopulationTimer_stop - prePopulationTimer_start))
+print("pre population (s): %.6f"%(prePopulationTimer_stop - prePopulationTimer_start))
 
 populationGenerationTimer_start = time.monotonic()
 
@@ -322,8 +316,9 @@ if not simulator.SimulationConfig().input_file:
         fx = rng.uniform(-1, 1)
         fy = rng.uniform(-1, 1)
         # Use the random speed for the velocity.
-        fx /= np.linalg.norm([fx, fy])
-        fy /= np.linalg.norm([fx, fy])
+        fxy_len = np.linalg.norm([fx, fy])
+        fx /= fxy_len
+        fy /= fxy_len
         fx *= fmagnitude
         fy *= fmagnitude
 
@@ -339,11 +334,11 @@ print("population generation (s): %.6f"%(populationGenerationTimer_stop - popula
 # Execute the simulation
 simulator.simulate()
 
-# Print the exeuction time to stdout
+# Print the execution time to stdout
 print("simulate (s): %.6f"%simulator.getElapsedTimeSimulation())
 print("rtc (s): %.6f"%simulator.getElapsedTimeRTCInitialisation())
 
-# Join the visualsition if required
+# Join the visualisation if required
 if pyflamegpu.VISUALISATION:
     visualisation.join()
 

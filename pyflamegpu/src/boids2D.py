@@ -227,7 +227,7 @@ FLAMEGPU_AGENT_FUNCTION(inputdata, flamegpu::MessageSpatial2D, flamegpu::Message
     agent_x += agent_fx * TIME_SCALE;
     agent_y += agent_fy * TIME_SCALE;
 
-    // Wramp position
+    // Wrap position
     const float MIN_POSITION = FLAMEGPU->environment.getProperty<float>("MIN_POSITION");
     const float MAX_POSITION = FLAMEGPU->environment.getProperty<float>("MAX_POSITION");
     wrapPosition(agent_x, agent_y, MIN_POSITION, MAX_POSITION);
@@ -278,7 +278,7 @@ env.newPropertyFloat("SEPARATION_RADIUS", 1.0)
 
 # Global Scalers
 env.newPropertyFloat("TIME_SCALE", 1.0) # 1.0 for benchmarking to behave the same as the other simulators.
-env.newPropertyFloat("GLOBAL_SCALE", 1.0) # 1.0 for comparing to other benchamrks
+env.newPropertyFloat("GLOBAL_SCALE", 1.0) # 1.0 for comparing to other benchmarks
 
 # Rule scalers
 env.newPropertyFloat("STEER_SCALE", 0.03) # cohere scale?  0.03
@@ -357,7 +357,7 @@ if pyflamegpu.VISUALISATION:
 # Initialisation
 simulator.initialise(sys.argv)
 prePopulationTimer_stop = time.monotonic()
-print("pre population (s): %.6f\n"%(prePopulationTimer_stop - prePopulationTimer_start))
+print("pre population (s): %.6f"%(prePopulationTimer_stop - prePopulationTimer_start))
 
 populationGenerationTimer_start = time.monotonic()
 
@@ -389,8 +389,9 @@ if not simulator.SimulationConfig().input_file:
         fx = rng.uniform(-1, 1)
         fy = rng.uniform(-1, 1)
         # Use the random speed for the velocity.
-        fx /= np.linalg.norm([fx, fy])
-        fy /= np.linalg.norm([fx, fy])
+        fxy_len = np.linalg.norm([fx, fy])
+        fx /= fxy_len
+        fy /= fxy_len
         fx *= fmagnitude
         fy *= fmagnitude
 
@@ -406,11 +407,11 @@ print("population generation (s): %.6f"%(populationGenerationTimer_stop - popula
 # Execute the simulation
 simulator.simulate()
 
-# Print the exeuction time to stdout
+# Print the execution time to stdout
 print("simulate (s): %.6f"%simulator.getElapsedTimeSimulation())
 print("rtc (s): %.6f"%simulator.getElapsedTimeRTCInitialisation())
 
-# Join the visualsition if required
+# Join the visualisation if required
 if pyflamegpu.VISUALISATION:
     visualisation.join()
 
