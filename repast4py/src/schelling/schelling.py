@@ -11,7 +11,7 @@ import numpy as np
 from typing import Final, Dict, Tuple
 from mpi4py import MPI
 
-import math, sys, csv, time
+import math, sys, csv, time, itertools
 
 from functools import reduce
 
@@ -25,18 +25,25 @@ A: Final = 0
 B: Final = 1
 UNOCCUPIED: Final = 2
 
+def dp_to_array(dp):
+    if dp is not None:
+        return np.array((dp.x, dp.y))
+    return None
+    
+def array_to_dp(arr):
+    if arr is not None:
+        return dpt(arr[0], arr[1])
+    return None
 
-class Agent(core.Agent): 
+
+class Cell(core.Agent): 
 
     TYPE = 0
 
     def __init__(self, a_id, rank):
-        super().__init__(id=a_id, type=Agent.TYPE, rank=rank)
+        super().__init__(id=a_id, type=Cell.TYPE, rank=rank)
         self.current_type = UNOCCUPIED
-        self.next_type = UNOCCUPIED
-        self.happy = False
-        self.available = False
-        self.movement_resolved = False
+        self.winner = None
         
     def save(self) -> Tuple:
         """Saves the state of this Boid as a Tuple.
@@ -46,11 +53,22 @@ class Agent(core.Agent):
         Returns:
             The saved state of this Boid.
         """
-        return (self.uid, self.current_type, self.next_type, self.happy, self.available, self.movement_resolved)
+        return (self.uid, self.current_type, self.winner)
+        
+        
+    def update(self, data: Tuple):    
+        """Updates the state of this agent when it is a ghost
+        agent on a rank other than its local one.
+
+        Args:
+            data: the new agent state
+        """
+        # The example only updates if there is a change, is there a performance reason for doing this?
+        self.current_type      = data[1]
+        self.winner            = data[2]
         
     def determineStatus(self):
-        grid = model.grid
-        pt = grid.get_location(self)
+        pt = model.grid.get_location(self)
         nghs = np.transpose(find_2d_nghs_periodic(np.array((pt.x, pt.y)), model.grid_box))
 
         same_type_neighbours = 0
@@ -58,53 +76,74 @@ class Agent(core.Agent):
 
         # Iterate 3x3 Moore neighbourhood (but skip ourself)
         for ngh in nghs:
-            at = dpt(ngh[0], ngh[1]) # at._reset_from_array(ngh) does not work correctly???
+            at = array_to_dp(ngh) # at._reset_from_array(ngh) does not work correctly???
             if pt == at:
                 continue
-            # Iterate agents within current grid cell
-            for obj in grid.get_agents(at):
-                same_type_neighbours += int(self.current_type == obj.current_type)
-                diff_type_neighbours += int(self.current_type != obj.current_type and obj.current_type != UNOCCUPIED)
+            # Iterate cell agents within current grid cell
+            for obj in model.grid.get_agents(at):
+                if obj.uid[1] == Cell.TYPE:
+                    same_type_neighbours += int(self.current_type == obj.current_type)
+                    diff_type_neighbours += int(self.current_type != obj.current_type and obj.current_type != UNOCCUPIED)
         
-        self.isHappy = (float(same_type_neighbours) / (same_type_neighbours + diff_type_neighbours)) > THRESHOLD if same_type_neighbours else False
-        self.next_type = self.current_type if ((self.current_type != UNOCCUPIED) and self.isHappy) else UNOCCUPIED
-        self.movement_resolved = (self.current_type == UNOCCUPIED) or self.isHappy
-        self.available = (self.current_type == UNOCCUPIED) or not self.isHappy
+        isHappy = (float(same_type_neighbours) / (same_type_neighbours + diff_type_neighbours)) > THRESHOLD if same_type_neighbours else False
+        if not isHappy and self.winner is not None:
+            old_winner = model.context.agent(self.winner)
+            old_winner.movement_resolved = False
+            self.winner = None
+            self.current_type = UNOCCUPIED
+        
+    def selectWinner(self):
+        if self.winner is not None:
+            return
+        pt = model.grid.get_location(self)
+        
+        bid_agents = [x for x in model.grid.get_agents(pt) if x.uid[1] == Agent.TYPE]
+        # Random agent in the bucket wins
+        if len(bid_agents):
+            winner = random.default_rng.choice(bid_agents)
+            winner.movement_resolved = True
+            self.winner = winner.uid
+            self.current_type = winner.my_type
+
+class Agent(core.Agent): 
+
+    TYPE = 1
+
+    def __init__(self, a_id, rank):
+        super().__init__(id=a_id, type=Agent.TYPE, rank=rank)
+        self.my_type = UNOCCUPIED
+        self.movement_resolved = True
+        
+    def save(self) -> Tuple:
+        """Saves the state of this Boid as a Tuple.
+
+        Used to move this Boid from one MPI rank to another.
+
+        Returns:
+            The saved state of this Boid.
+        """
+        return (self.uid, self.my_type, self.movement_resolved)
+        
+        
+    def update(self, data: Tuple):    
+        """Updates the state of this agent when it is a ghost
+        agent on a rank other than its local one.
+
+        Args:
+            data: the new agent state
+        """
+        # The example only updates if there is a change, is there a performance reason for doing this?
+        self.my_type           = data[1]
+        self.movement_resolved = data[2]
+            
         
     def bid(self, available_locations):
         if self.movement_resolved:
             return
         
-        # Select a random location
-        selected_location = random.default_rng.choice(available_locations) 
-
-        # Bid for that location
-        bid_grid = model.bidding_grid
-        bid_grid.add(self)
-        bid_grid.move(self, selected_location)
-        
-    def selectWinner(self):
-        grid = model.grid
-        pt = grid.get_location(self)
-        
-        bid_grid = model.bidding_grid
-        bid_agents = [x for x in bid_grid.get_agents(pt)]
-        # Random agent in the bucket wins
-        if len(bid_agents):
-            winner = random.default_rng.choice(bid_agents)
-            self.next_type = winner.current_type # @todo: Does winner need to be a ghost agent?
-            self.available = False
-            # Remove losers from the bidding process
-            for ba in bid_agents:
-                if ba != winner:
-                    bid_grid.remove(ba)
-
-    def hasMoved(self):
-        bid_grid = model.bidding_grid
-        # Check if I won, update self and remove winning bid
-        if bid_grid.contains(self):
-            self.movement_resolved = True
-            bid_grid.remove(self)
+        # Select and bid for a random location
+        selected_location = random.default_rng.choice(available_locations)
+        model.grid.move(self, array_to_dp(selected_location))
         
 agent_cache = {}
 
@@ -123,18 +162,17 @@ def restore_agent(agent_data: Tuple):
                     agent state.
     """
     uid = agent_data[0]
+    
     if uid in agent_cache:
         h = agent_cache[uid]
     else:
-        h = Agent(uid[0], uid[2])
+        if uid[1] == Cell.TYPE:
+            h = Cell(uid[0], uid[2])
+        elif uid[1] == Agent.TYPE:
+            h = Agent(uid[0], uid[2])
         agent_cache[uid] = h
-
     # restore the agent state from the agent_data tuple
-    h.current_type      = agent_data[1]
-    h.next_type         = agent_data[2]
-    h.happy             = agent_data[3]
-    h.available         = agent_data[4]
-    h.movement_resolved = agent_data[5]
+    h.update(agent_data)
     return h
 
 class Model:
@@ -153,52 +191,64 @@ class Model:
         GRID_WIDTH = int(params['grid.width'])
         grid_box = space.BoundingBox(int(0), int(GRID_WIDTH), int(0), int(GRID_WIDTH), 0, 0)
         self.grid_box = np.array((grid_box.xmin, grid_box.xmin + grid_box.xextent - 1, grid_box.ymin, grid_box.ymin + grid_box.yextent - 1))
-        self.grid = space.SharedGrid('grid', bounds=grid_box, borders=BorderType.Sticky, occupancy=OccupancyType.Single, buffer_size=2, comm=comm)
-        self.bidding_grid = space.SharedGrid('bidding grid', bounds=grid_box, borders=BorderType.Sticky, occupancy=OccupancyType.Multiple, buffer_size=1, comm=comm)
+        self.grid = space.SharedGrid('grid', bounds=grid_box, borders=BorderType.Sticky, occupancy=OccupancyType.Multiple, buffer_size=0, comm=comm)
 
         self.context.add_projection(self.grid)
-        self.context.add_projection(self.bidding_grid)
 
         
         prePopulationTimer_stop = time.monotonic()
-        print("pre population (s): %.6f"%(prePopulationTimer_stop - prePopulationTimer_start))
+        if self.rank == 0:
+            print("pre population (s): %.6f"%(prePopulationTimer_stop - prePopulationTimer_start))
         
         populationGenerationTimer_start = time.monotonic()
 
-        # Calculate the total number of cells
-        CELL_COUNT = GRID_WIDTH * GRID_WIDTH
-        POPULATED_COUNT = int(params['population.count'])
-        # Select POPULATED_COUNT unique random integers in the range [0, CELL_COUNT), by shuffling the iota.
-        shuffledIota = [i for i in range(CELL_COUNT)]
-        random.default_rng.shuffle(shuffledIota)
-        for elementIdx in range(CELL_COUNT):
-            # Create agent
-            h = Agent(elementIdx, self.rank)
-            self.context.add(h)
-            # Setup it's location
-            idx = shuffledIota[elementIdx]
-            x = int(idx % GRID_WIDTH)
-            y = int(idx / GRID_WIDTH)
-            self.move(h, x, y)
-            # If the elementIDX is below the populated count, generated a populated type, otherwise it defaults unoccupied
-            if elementIdx < POPULATED_COUNT:
-                h.current_type = A if random.default_rng.uniform() < 0.5 else B
-
+        # Only rank zero generates agents, for simplicity/to avoid conflict
+        if self.rank == 0:
+            # Calculate the total number of cells
+            CELL_COUNT = GRID_WIDTH * GRID_WIDTH
+            POPULATED_COUNT = int(params['population.count'])
+            # Select POPULATED_COUNT unique random integers in the range [0, CELL_COUNT), by shuffling the iota.
+            shuffledIota = [i for i in range(CELL_COUNT)]
+            random.default_rng.shuffle(shuffledIota)
+            for elementIdx in range(CELL_COUNT):
+                # Create cell agent
+                cell = Cell(elementIdx, self.rank)
+                self.context.add(cell)
+                # Setup it's location
+                idx = shuffledIota[elementIdx]
+                x = int(idx % GRID_WIDTH)
+                y = int(idx / GRID_WIDTH)
+                self.move(cell, x, y)
+                # If the elementIDX is below the populated count, generated a mobile agent and make it the current winner
+                if elementIdx < POPULATED_COUNT:
+                    agent = Agent(elementIdx, self.rank)
+                    self.context.add(agent)
+                    agent.my_type = A if random.default_rng.uniform() < 0.5 else B
+                    cell.current_type = agent.my_type
+                    cell.winner = agent.uid
+                    self.move(agent, x, y)
+                
+                
         populationGenerationTimer_stop = time.monotonic()
-        print("population generation (s): %.6f"%(populationGenerationTimer_stop - populationGenerationTimer_start))
+        if self.rank == 0:
+            print("population generation (s): %.6f"%(populationGenerationTimer_stop - populationGenerationTimer_start))
 
 
     def at_end(self):
         if self.csv_log:
             # Log final agent positions to file
+            self.csv_log = self.csv_log.replace(".csv", "%d.csv"%(self.comm.rank))
             with open(self.csv_log, 'w', newline='') as file:
                 writer = csv.writer(file)
                 writer.writerow(['"x"', '"y"', '"fx"', '"fy"'])
-                for b in self.context.agents(Agent.TYPE):
+                for b in self.context.agents(Cell.TYPE):
                     agent_xy = self.grid.get_location(b)
                     t = b.current_type
                     writer.writerow([agent_xy.x, agent_xy.y, int(t==A or t==UNOCCUPIED), int(t==B or t==UNOCCUPIED)])
-
+                    
+    def remove(self, agent):
+        self.grid.remove(agent)
+        
     def move(self, agent, x, y):
         # timer.start_timer('grid_move')
         self.grid.move(agent, dpt(x, y))
@@ -210,44 +260,43 @@ class Model:
         self.context.synchronize(restore_agent)
 
         # timer.start_timer('b_step')
-        for a in self.context.agents(Agent.TYPE):
-            a.determineStatus()
+        for c in self.context.agents(Cell.TYPE):
+            c.determineStatus()
         # Plan Movement Submodel
         # Break from submodel once all agents have resolved their movement
         while True:
             self.context.synchronize(restore_agent)
             # Available agents output their location
-            available_spaces = [self.grid.get_location(a) for a in self.context.agents(Agent.TYPE) if a.available]
-            
+            # Perform a local gather
+            my_available_spaces = [dp_to_array(self.grid.get_location(c)) for c in self.context.agents(Cell.TYPE) if c.winner is None]
+            # Collectively do a global gather of available spaces
+            # TODO: this could potentially be made cheaper with a 2-pass
+            #       step 1: move agents to a rank based on ratio of available spaces in each rank
+            #       step 2: move agent to a random available space within it's new rank
+            available_spaces = list(itertools.chain.from_iterable(self.comm.allgather(my_available_spaces)))
             # Unhappy agents bid for a new location
             for a in self.context.agents(Agent.TYPE):
                 a.bid(available_spaces)
-                
+
             self.context.synchronize(restore_agent)
             # Available locations check if anyone wants to move to them. If so, approve one and mark as unavailable
             # Update next type to the type of the mover
-            for a in self.context.agents(Agent.TYPE):
-                a.selectWinner()
-            
-            self.context.synchronize(restore_agent)
-            # Successful movers mark themselves as resolved
-            for a in self.context.agents(Agent.TYPE):
-                a.hasMoved()
-            
-            self.context.synchronize(restore_agent)
-            if not any([not a.movement_resolved for a in self.context.agents(Agent.TYPE)]):
+            # todo request winner as a ghost so their UID can be marked as winner
+            for c in self.context.agents(Cell.TYPE):
+                c.selectWinner()
+                
+            my_mvmt_resolved = any([not a.movement_resolved for a in self.context.agents(Agent.TYPE)])
+            if not any(self.comm.allgather(my_mvmt_resolved)):
+            #if not self.comm.allreduce(my_mvmt_resolved, op=MPI.ANY):
                 break
-
-        self.context.synchronize(restore_agent)
-        for a in self.context.agents(Agent.TYPE):
-            a.current_type = a.next_type
         # timer.stop_timer('b_step')
 
     def run(self):
         simulateTimer_start = time.monotonic()
         self.runner.execute()
         simulateTimer_stop = time.monotonic()
-        print("simulate (s): %.6f"%(simulateTimer_stop - simulateTimer_start))
+        if self.rank == 0:
+            print("simulate (s): %.6f"%(simulateTimer_stop - simulateTimer_start))
 
     def remove_agent(self, agent):
         self.context.remove(agent)
@@ -261,12 +310,13 @@ def run(params: Dict):
     global model
     model = Model(MPI.COMM_WORLD, params)
     model.run()
+    mainTimer_stop = time.monotonic()
+    if model.rank == 0:
+        print("main (s): %.6f\n"%(mainTimer_stop - mainTimer_start))
 
 
 if __name__ == "__main__":
     parser = create_args_parser()
     args = parser.parse_args()
     params = init_params(args.parameters_file, args.parameters)
-    run(params)    
-    mainTimer_stop = time.monotonic()
-    print("main (s): %.6f\n"%(mainTimer_stop - mainTimer_start))
+    run(params)
