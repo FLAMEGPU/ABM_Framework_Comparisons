@@ -74,7 +74,6 @@ class Boid(core.Agent):
         # Total change in velocity
         velocity_change_xy = np.array((0.0, 0.0))
 
-        at = dpt(0, 0)
         maximum = [[], -(sys.maxsize - 1)]
         # Iterate moore neighbourhood of grid
         for ngh in nghs:
@@ -272,7 +271,7 @@ class Model:
         self.context.remove(agent)
 
 def run(params: Dict):
-    """Creates and runs the Zombies Model.
+    """Creates and runs the Flocking Model.
 
     Args:
         params: the model input parameters
