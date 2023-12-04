@@ -1,5 +1,4 @@
 from repast4py import core, space, schedule, logging, random
-from repast4py.space import ContinuousPoint as cpt
 from repast4py.space import DiscretePoint as dpt
 from repast4py.space import BorderType, OccupancyType
 from repast4py.geometry import find_2d_nghs_periodic
@@ -43,6 +42,7 @@ class Boid(core.Agent):
 
     def __init__(self, a_id, rank):
         super().__init__(id=a_id, type=Boid.TYPE, rank=rank) 
+        self.xy = np.array((0.0, 0.0))
         self.fxy = np.array((0.0, 0.0))
         
     def save(self) -> Tuple:
@@ -53,7 +53,7 @@ class Boid(core.Agent):
         Returns:
             The saved state of this Boid.
         """
-        return (self.uid, self.fxy)
+        return (self.uid, self.xy, self.fxy)
 
     def step(self):
         grid = model.grid
@@ -61,8 +61,7 @@ class Boid(core.Agent):
         nghs = np.transpose(find_2d_nghs_periodic(np.array((pt.x, pt.y)), model.grid_box))
 
         # Agent position
-        agent_xy = model.space.get_location(self) 
-        agent_xy = np.array((agent_xy.x, agent_xy.y))
+        agent_xy = self.xy
 
         # Boids perceived center
         perceived_centre_xy = np.array((0.0, 0.0))
@@ -83,8 +82,7 @@ class Boid(core.Agent):
                 # Ignore self messages.
                 if obj.uid[0] != self.uid[0]:
                     # Get the message location
-                    message_xy = model.space.get_location(obj)
-                    message_xy = np.array((message_xy.x, message_xy.y))
+                    message_xy = obj.xy
                     
                     # Convert message location to virtual coordinates to account for wrapping
                     xy21 = message_xy - agent_xy;
@@ -158,7 +156,7 @@ class Boid(core.Agent):
                 agent_xy[i] -= width
 
         # Move agent
-        model.move(self, agent_xy[0], agent_xy[1])
+        model.move(self, agent_xy)
 
 
 
@@ -187,7 +185,8 @@ def restore_agent(agent_data: Tuple):
         agent_cache[uid] = h
 
     # restore the agent state from the agent_data tuple
-    h.fx = agent_data[1]
+    h.xy = agent_data[1]
+    h.fxy = agent_data[2]
     return h
     
     
@@ -206,49 +205,47 @@ class Model:
 
         grid_box = space.BoundingBox(int(MIN_POSITION), int(math.floor(MAX_POSITION/INTERACTION_RADIUS)), int(MIN_POSITION), int(math.floor(MAX_POSITION/INTERACTION_RADIUS)), 0, 0)
         box = space.BoundingBox(int(MIN_POSITION), int(MAX_POSITION), int(MIN_POSITION), int(MAX_POSITION), 0, 0)
-        self.grid = space.SharedGrid('grid', bounds=grid_box, borders=BorderType.Sticky, occupancy=OccupancyType.Multiple,
+        self.grid = space.SharedGrid('grid', bounds=grid_box, borders=BorderType.Periodic, occupancy=OccupancyType.Multiple,
                                      buffer_size=2, comm=comm)
         self.grid_box = np.array((grid_box.xmin, grid_box.xmin + grid_box.xextent - 1, grid_box.ymin, grid_box.ymin + grid_box.yextent - 1))
         self.context.add_projection(self.grid)
-        self.space = space.SharedCSpace('space', bounds=box, borders=BorderType.Sticky, occupancy=OccupancyType.Multiple,
-                                        buffer_size=int(math.ceil(INTERACTION_RADIUS)), comm=comm, tree_threshold=100)
-        self.context.add_projection(self.space)
         
         prePopulationTimer_stop = time.monotonic()
-        print("pre population (s): %.6f"%(prePopulationTimer_stop - prePopulationTimer_start))
+        if self.rank == 0:
+            print("pre population (s): %.6f"%(prePopulationTimer_stop - prePopulationTimer_start))
         
         populationGenerationTimer_start = time.monotonic()
 
-        local_bounds = self.space.get_local_bounds()
-        for i in range(int(params['boid.count'])):
-            h = Boid(i, self.rank)
-            self.context.add(h)
-            x = random.default_rng.uniform(local_bounds.xmin, local_bounds.xmin + local_bounds.xextent)
-            y = random.default_rng.uniform(local_bounds.ymin, local_bounds.ymin + local_bounds.yextent)
-            self.move(h, x, y)
-            fxy = np.array((random.default_rng.uniform(-1, 1), random.default_rng.uniform(-1, 1)))
-            h.fxy = INITIAL_SPEED * fxy / np.linalg.norm(fxy) 
+        # Only rank zero generates agents, for simplicity/to avoid RNG conflict
+        if self.rank == 0:
+            for i in range(int(params['boid.count'])):
+                h = Boid(i, self.rank)
+                self.context.add(h)
+                x = random.default_rng.uniform(MIN_POSITION, MAX_POSITION)
+                y = random.default_rng.uniform(MIN_POSITION, MAX_POSITION)
+                self.move(h, np.array((x, y)))
+                fxy = np.array((random.default_rng.uniform(-1, 1), random.default_rng.uniform(-1, 1)))
+                h.fxy = INITIAL_SPEED * fxy / np.linalg.norm(fxy) 
 
         populationGenerationTimer_stop = time.monotonic()
-        print("population generation (s): %.6f"%(populationGenerationTimer_stop - populationGenerationTimer_start))
+        if self.rank == 0:
+            print("population generation (s): %.6f"%(populationGenerationTimer_stop - populationGenerationTimer_start))
 
 
     def at_end(self):
         if self.csv_log:
             # Log final agent positions to file
+            self.csv_log = self.csv_log.replace(".csv", "%d.csv"%(self.comm.rank))
             with open(self.csv_log, 'w', newline='') as file:
                 writer = csv.writer(file)
                 writer.writerow(['"x"', '"y"', '"fx"', '"fy"'])
                 for b in self.context.agents(Boid.TYPE):
-                    agent_xy = self.space.get_location(b)
-                    writer.writerow([agent_xy.x, agent_xy.y, b.fxy[0], b.fxy[1]])
+                    writer.writerow([b.xy[0], b.xy[1], b.fxy[0], b.fxy[1]])
 
-    def move(self, agent, x, y):
-        # timer.start_timer('space_move')
-        self.space.move(agent, cpt(x, y))
-        # timer.stop_timer('space_move')
+    def move(self, agent, xy):
+        agent.xy = xy
         # timer.start_timer('grid_move')
-        self.grid.move(agent, dpt(int(math.floor(x/INTERACTION_RADIUS)), int(math.floor(y/INTERACTION_RADIUS))))
+        self.grid.move(agent, dpt(int(math.floor(xy[0]/INTERACTION_RADIUS)), int(math.floor(xy[1]/INTERACTION_RADIUS))))
         # timer.stop_timer('grid_move')
 
     def step(self):
@@ -265,7 +262,8 @@ class Model:
         simulateTimer_start = time.monotonic()
         self.runner.execute()
         simulateTimer_stop = time.monotonic()
-        print("simulate (s): %.6f"%(simulateTimer_stop - simulateTimer_start))
+        if self.rank == 0:
+            print("simulate (s): %.6f"%(simulateTimer_stop - simulateTimer_start))
 
     def remove_agent(self, agent):
         self.context.remove(agent)
@@ -279,6 +277,9 @@ def run(params: Dict):
     global model
     model = Model(MPI.COMM_WORLD, params)
     model.run()
+    mainTimer_stop = time.monotonic()
+    if model.rank == 0:
+        print("main (s): %.6f\n"%(mainTimer_stop - mainTimer_start))
 
 
 if __name__ == "__main__":
@@ -286,5 +287,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
     params = init_params(args.parameters_file, args.parameters)
     run(params)    
-    mainTimer_stop = time.monotonic()
-    print("main (s): %.6f\n"%(mainTimer_stop - mainTimer_start))
