@@ -195,6 +195,9 @@ class Model:
 
         self.context.add_projection(self.grid)
 
+        # Each rank must generate a unique seed
+        # https://numpy.org/doc/stable/reference/random/parallel.html#sequence-of-integer-seeds
+        random.default_rng = np.random.default_rng([self.rank, random.default_rng.bytes(4)])
         
         prePopulationTimer_stop = time.monotonic()
         if self.rank == 0:

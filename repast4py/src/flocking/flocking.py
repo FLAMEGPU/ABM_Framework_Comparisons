@@ -210,6 +210,10 @@ class Model:
         self.grid_box = np.array((grid_box.xmin, grid_box.xmin + grid_box.xextent - 1, grid_box.ymin, grid_box.ymin + grid_box.yextent - 1))
         self.context.add_projection(self.grid)
         
+        # Each rank must generate a unique seed
+        # https://numpy.org/doc/stable/reference/random/parallel.html#sequence-of-integer-seeds
+        random.default_rng = np.random.default_rng([self.rank, random.default_rng.bytes(4)])
+        
         prePopulationTimer_stop = time.monotonic()
         if self.rank == 0:
             print("pre population (s): %.6f"%(prePopulationTimer_stop - prePopulationTimer_start))
