@@ -3,13 +3,16 @@ using Pkg; Pkg.instantiate()
 using Agents
 using Test
 using Statistics
+using Random
 
-# Does not use @bencmark, due to jobs being OOM killed for long-running models, with a higher maximum runtime to allow the required repetitions.
+# Does not use @benchmark, due to jobs being OOM killed for long-running models, with a higher maximum runtime to allow the required repetitions.
 # enabling the gc between samples did not resolve this BenchmarkTools.DEFAULT_PARAMETERS.gcsample = false
-# Runs each model SAMPLE_COUNT + 1 times, discarding hte first timing (which includes compilation)
+# Runs each model SAMPLE_COUNT + 1 times, discarding the first timing (which includes compilation)
 SAMPLE_COUNT = 10
+SEED = 12
 
 # Boids
+Random.seed!(SEED)
 times = []
 for i in 0:SAMPLE_COUNT
     (model, agent_step!, model_step!) = Models.flocking(
@@ -20,6 +23,7 @@ for i in 0:SAMPLE_COUNT
         match_factor = 0.05,
         visual_distance = 5.0,
         extent = (400, 400),
+        seed = rand(Int),
     )
     step_stats = @timed step!(model, agent_step!, model_step!, 100)
     if i > 0
@@ -30,9 +34,14 @@ println("Agents.jl Flocking times (ms)", map(x -> x * 1e3, times))
 println("Agents.jl Flocking (mean ms): ", (Statistics.mean(times)) * 1e3)
 
 # Schelling
+Random.seed!(SEED)
 times = []
 for i in 0:SAMPLE_COUNT
-    (model, agent_step!, model_step!) = Models.schelling(griddims = (500, 500), numagents = 200000)
+    (model, agent_step!, model_step!) = Models.schelling(
+        griddims = (500, 500), 
+        numagents = 200000,
+        seed = rand(Int),
+    )
     step_stats = @timed step!(model, agent_step!, model_step!, 100)
     if i > 0
         append!(times, step_stats.time)
