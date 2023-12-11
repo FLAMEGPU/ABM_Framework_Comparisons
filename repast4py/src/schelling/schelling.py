@@ -142,7 +142,8 @@ class Agent(core.Agent):
             return
         
         # Select and bid for a random location
-        selected_location = random.default_rng.choice(available_locations)
+        # DO NOT USE random.default_rng.choice() HERE, VERY SLOW!!!
+        selected_location = available_locations[random.default_rng.integers(len(available_locations))]
         model.grid.move(self, array_to_dp(selected_location))
         
 agent_cache = {}
