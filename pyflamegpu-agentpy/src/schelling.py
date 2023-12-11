@@ -41,7 +41,7 @@ def determine_status(message_in: pyflamegpu.MessageArray2D, message_out: pyflame
         same_type_neighbours += my_type == message_type
         diff_type_neighbours += (my_type != message_type) and (message_type != UNOCCUPIED)
 
-    isHappy = (float(same_type_neighbours) / (same_type_neighbours + diff_type_neighbours)) > THRESHOLD
+    isHappy = (float(same_type_neighbours) / (same_type_neighbours + diff_type_neighbours)) > THRESHOLD if same_type_neighbours else False
     pyflamegpu.setVariableUInt("happy", isHappy);
     my_next_type = my_type if ((my_type != UNOCCUPIED) and isHappy) else UNOCCUPIED
     pyflamegpu.setVariableUInt("next_type", my_next_type)
