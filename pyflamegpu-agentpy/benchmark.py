@@ -10,11 +10,13 @@ import pathlib
 import re
 import math
 import statistics
+import random
 
 SCRIPT_PATH = pathlib.Path(__file__).parent
 BUILD_DIR = "build"
 CONFIG = "Release"
 REPETITIONS = 10
+SEED = 12
 
 def extract_times(lines):
     PRE_POP_RE = re.compile("^(pre population \(s\): ([0-9]+(\.[0-9]+)?))$")
@@ -66,8 +68,9 @@ if flocking_model_path.is_file():
     main_times = []
     sim_times = []
     rtc_times = []
+    random.seed(SEED)
     for i in range(0, REPETITIONS):
-        result = subprocess.run([sys.executable, str(flocking_model_path), "-s", "100", "--disable-rtc-cache"], stdout=subprocess.PIPE)
+        result = subprocess.run([sys.executable, str(flocking_model_path), "-s", "100", "-r", str(random.randint(0, 999999999)), "--disable-rtc-cache"], stdout=subprocess.PIPE)
         # @todo make this less brittle
         lines = result.stdout.decode('utf-8').splitlines()
         pre_pop_time, pop_gen_time, main_time, sim_time, rtc_time = extract_times(lines)
@@ -78,20 +81,20 @@ if flocking_model_path.is_file():
         rtc_times.append(rtc_time)
     min_main_time = min(main_times)
     min_simulate_time = min(sim_times)
-    print(f"FLAMEGPU2 flocking prepop times (s)  : {pre_pop_times}")
-    print(f"FLAMEGPU2 flocking popgen times (s)  : {pop_gen_times}")
-    print(f"FLAMEGPU2 flocking simulate times (s): {sim_times}")
-    print(f"FLAMEGPU2 flocking rtc times (s): {rtc_times}")
-    print(f"FLAMEGPU2 flocking main times (s)    : {main_times}")
-    print(f"FLAMEGPU2 flocking prepop (mean ms)  : {statistics.mean(pre_pop_times)*1e3}")
-    print(f"FLAMEGPU2 flocking popgen (mean ms)  : {statistics.mean(pop_gen_times)*1e3}")
-    print(f"FLAMEGPU2 flocking simulate (mean ms): {statistics.mean(sim_times)*1e3}")
-    print(f"FLAMEGPU2 flocking rtc (mean ms): {statistics.mean(rtc_times)*1e3}")
-    print(f"FLAMEGPU2 flocking main (mean ms)    : {statistics.mean(main_times)*1e3}")
+    print(f"pyflamegpu-agentpy flocking prepop times (s)  : {pre_pop_times}")
+    print(f"pyflamegpu-agentpy flocking popgen times (s)  : {pop_gen_times}")
+    print(f"pyflamegpu-agentpy flocking simulate times (s): {sim_times}")
+    print(f"pyflamegpu-agentpy flocking rtc times (s): {rtc_times}")
+    print(f"pyflamegpu-agentpy flocking main times (s)    : {main_times}")
+    print(f"pyflamegpu-agentpy flocking prepop (mean ms)  : {statistics.mean(pre_pop_times)*1e3}")
+    print(f"pyflamegpu-agentpy flocking popgen (mean ms)  : {statistics.mean(pop_gen_times)*1e3}")
+    print(f"pyflamegpu-agentpy flocking simulate (mean ms): {statistics.mean(sim_times)*1e3}")
+    print(f"pyflamegpu-agentpy flocking rtc (mean ms): {statistics.mean(rtc_times)*1e3}")
+    print(f"pyflamegpu-agentpy flocking main (mean ms)    : {statistics.mean(main_times)*1e3}")
 
 
 else:
-     print(f"Error: pyFLAMEGPU flocking model ({flocking_model_path}) does not exist. Please check paths are correct.", file=sys.stderr)
+     print(f"Error: pyflamegpu-agentpy flocking model ({flocking_model_path}) does not exist. Please check paths are correct.", file=sys.stderr)
 
 # Benchmark Schelling
 schelling_model_path = SCRIPT_PATH / "src/schelling.py"
@@ -101,8 +104,9 @@ if schelling_model_path.is_file():
     main_times = []
     sim_times = []
     rtc_times = []
+    random.seed(SEED)
     for i in range(0, REPETITIONS):
-        result = subprocess.run([sys.executable, str(schelling_model_path), "-s", "100", "--disable-rtc-cache"], stdout=subprocess.PIPE)
+        result = subprocess.run([sys.executable, str(schelling_model_path), "-s", "100", "-r", str(random.randint(0, 999999999)), "--disable-rtc-cache"], stdout=subprocess.PIPE)
         # @todo make this less brittle
         lines = result.stdout.decode('utf-8').splitlines()
         pre_pop_time, pop_gen_time, main_time, sim_time, rtc_time = extract_times(lines)
@@ -111,17 +115,17 @@ if schelling_model_path.is_file():
         main_times.append(main_time)
         sim_times.append(sim_time)
         rtc_times.append(rtc_time)
-    print(f"FLAMEGPU2 schelling prepop times (s)  : {pre_pop_times}")
-    print(f"FLAMEGPU2 schelling popgen times (s)  : {pop_gen_times}")
-    print(f"FLAMEGPU2 schelling simulate times (s): {sim_times}")
-    print(f"FLAMEGPU2 schelling rtc times (s): {rtc_times}")
-    print(f"FLAMEGPU2 schelling main times (s)    : {main_times}")
-    print(f"FLAMEGPU2 schelling prepop (mean ms)  : {statistics.mean(pre_pop_times)*1e3}")
-    print(f"FLAMEGPU2 schelling popgen (mean ms)  : {statistics.mean(pop_gen_times)*1e3}")
-    print(f"FLAMEGPU2 schelling simulate (mean ms): {statistics.mean(sim_times)*1e3}")
-    print(f"FLAMEGPU2 schelling rtc (mean ms): {statistics.mean(rtc_times)*1e3}")
-    print(f"FLAMEGPU2 schelling main (mean ms)    : {statistics.mean(main_times)*1e3}")
+    print(f"pyflamegpu-agentpy schelling prepop times (s)  : {pre_pop_times}")
+    print(f"pyflamegpu-agentpy schelling popgen times (s)  : {pop_gen_times}")
+    print(f"pyflamegpu-agentpy schelling simulate times (s): {sim_times}")
+    print(f"pyflamegpu-agentpy schelling rtc times (s): {rtc_times}")
+    print(f"pyflamegpu-agentpy schelling main times (s)    : {main_times}")
+    print(f"pyflamegpu-agentpy schelling prepop (mean ms)  : {statistics.mean(pre_pop_times)*1e3}")
+    print(f"pyflamegpu-agentpy schelling popgen (mean ms)  : {statistics.mean(pop_gen_times)*1e3}")
+    print(f"pyflamegpu-agentpy schelling simulate (mean ms): {statistics.mean(sim_times)*1e3}")
+    print(f"pyflamegpu-agentpy schelling rtc (mean ms): {statistics.mean(rtc_times)*1e3}")
+    print(f"pyflamegpu-agentpy schelling main (mean ms)    : {statistics.mean(main_times)*1e3}")
 
 else:
-    print(f"Error: pyFLAMEGPU schelling model ({schelling_model_path}) does not exist. Please check paths are correct.", file=sys.stderr)
+    print(f"Error: pyflamegpu-agentpy schelling model ({schelling_model_path}) does not exist. Please check paths are correct.", file=sys.stderr)
 

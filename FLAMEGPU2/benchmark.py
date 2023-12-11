@@ -10,11 +10,13 @@ import pathlib
 import re
 import math
 import statistics
+import random
 
 SCRIPT_PATH = pathlib.Path(__file__).parent
 BUILD_DIR = "build"
 CONFIG = "Release"
 REPETITIONS = 10
+SEED = 12
 
 
 def extract_times(lines):
@@ -59,8 +61,9 @@ if flocking_binary_path.is_file():
     pop_gen_times = []
     main_times = []
     sim_times = []
+    random.seed(SEED)
     for i in range(0, REPETITIONS):
-        result = subprocess.run([str(flocking_binary_path), "-s", "100"], stdout=subprocess.PIPE)
+        result = subprocess.run([str(flocking_binary_path), "-s", "100", "-r", str(random.randint(0, 999999999))], stdout=subprocess.PIPE)
         # @todo make this less brittle
         lines = result.stdout.decode('utf-8').splitlines()
         pre_pop_time, pop_gen_time, main_time, sim_time = extract_times(lines)
@@ -90,8 +93,9 @@ if schelling_binary_path.is_file():
     pop_gen_times = []
     main_times = []
     sim_times = []
+    random.seed(SEED)
     for i in range(0, REPETITIONS):
-        result = subprocess.run([str(schelling_binary_path), "-s", "100"], stdout=subprocess.PIPE)
+        result = subprocess.run([str(schelling_binary_path), "-s", "100", "-r", str(random.randint(0, 999999999))], stdout=subprocess.PIPE)
         # @todo make this less brittle
         lines = result.stdout.decode('utf-8').splitlines()
         pre_pop_time, pop_gen_time, main_time, sim_time = extract_times(lines)
