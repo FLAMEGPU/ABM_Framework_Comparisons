@@ -3,6 +3,16 @@
 echo "Benchmarking FLAMEGPU2"
 python3 FLAMEGPU2/benchmark.py
 
+echo "Benchmarking pyflamegpu"
+python3 pyflamegpu/benchmark.py
+
+echo "Benchmarking pyflamegpu-agentpy"
+python3 pyflamegpu-agentpy/benchmark.py
+
+echo "Benchmarking repast4py"
+echo "(todo setup MPI)"
+python3 repast4py/benchmark.py
+
 echo "Benchmarking Julia"
 julia --project=@. Agents/benchmark.jl
 
