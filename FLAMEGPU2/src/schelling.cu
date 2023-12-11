@@ -4,6 +4,7 @@
 #include <fstream>
 #include <array>
 #include <chrono>
+#include <numeric>
 
 #include "flamegpu/flamegpu.h"
 #include "flamegpu/detail/SteadyClockTimer.h"
@@ -41,7 +42,7 @@ FLAMEGPU_AGENT_FUNCTION(determine_status, flamegpu::MessageArray2D, flamegpu::Me
         diff_type_neighbours += (my_type != message_type) && (message_type != UNOCCUPIED);
     }
 
-    int isHappy = (static_cast<float>(same_type_neighbours) / (same_type_neighbours + diff_type_neighbours)) > THRESHOLD;
+    int isHappy = same_type_neighbours ? (static_cast<float>(same_type_neighbours) / (same_type_neighbours + diff_type_neighbours)) > THRESHOLD : false;
     FLAMEGPU->setVariable<unsigned int>("happy", isHappy);
     unsigned int my_next_type = ((my_type != UNOCCUPIED) && isHappy) ? my_type : UNOCCUPIED;
     FLAMEGPU->setVariable<unsigned int>("next_type", my_next_type);
@@ -149,12 +150,12 @@ int main(int argc, const char ** argv) {
 
 
     // Define a submodel for conflict resolution for agent movement
-    // This is neccesary for parlalel random movement of agents, to resolve conflict between agents moveing to the same location
+    // This is necessary for parallel random movement of agents, to resolve conflict between agents moving to the same location
     flamegpu::ModelDescription submodel("plan_movement");
     // Submodels require an exit condition function, so they do not run forever
     submodel.addExitCondition(movement_resolved);
     {
-        // Define the submodel environemnt
+        // Define the submodel environment
         flamegpu::EnvironmentDescription env = submodel.Environment();
         env.newProperty<unsigned int>("spaces_available", 0);
 

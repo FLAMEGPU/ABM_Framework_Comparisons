@@ -11,13 +11,13 @@ import re
 import math
 import statistics
 import random
+import os
 
 SCRIPT_PATH = pathlib.Path(__file__).parent
 BUILD_DIR = "build"
 CONFIG = "Release"
 REPETITIONS = 10
 SEED = 12
-
 
 def extract_times(lines):
     PRE_POP_RE = re.compile("^(pre population \(s\): ([0-9]+(\.[0-9]+)?))$")
@@ -55,15 +55,25 @@ def extract_times(lines):
 
 
 # Benchmark flocking
-flocking_binary_path = SCRIPT_PATH / f"{BUILD_DIR}/bin/{CONFIG}/boids2D"
-if flocking_binary_path.is_file():
+flocking_model_path = SCRIPT_PATH / "src/flocking/flocking.py"
+flocking_params_path = SCRIPT_PATH / "src/flocking/temp_params.yaml"
+if flocking_model_path.is_file():
     pre_pop_times = []
     pop_gen_times = []
     main_times = []
     sim_times = []
+    rtc_times = []
     random.seed(SEED)
     for i in range(0, REPETITIONS):
-        result = subprocess.run([str(flocking_binary_path), "-s", "100", "-r", str(random.randint(0, 999999999))], stdout=subprocess.PIPE)
+        # Create a seeded param file
+        with open(flocking_params_path, "w") as f:
+            params = f.write(
+f"""stop.at: 10.0
+boid.count: 80000
+csv.log: ""
+random.seed: {random.randint(0, 999999999)}
+""")
+        result = subprocess.run([sys.executable, str(flocking_model_path), str(flocking_params_path)], stdout=subprocess.PIPE)
         # @todo make this less brittle
         lines = result.stdout.decode('utf-8').splitlines()
         pre_pop_time, pop_gen_time, main_time, sim_time = extract_times(lines)
@@ -73,29 +83,41 @@ if flocking_binary_path.is_file():
         sim_times.append(sim_time)
     min_main_time = min(main_times)
     min_simulate_time = min(sim_times)
-    print(f"FLAMEGPU2 flocking prepop times (s)  : {pre_pop_times}")
-    print(f"FLAMEGPU2 flocking popgen times (s)  : {pop_gen_times}")
-    print(f"FLAMEGPU2 flocking simulate times (s): {sim_times}")
-    print(f"FLAMEGPU2 flocking main times (s)    : {main_times}")
-    print(f"FLAMEGPU2 flocking prepop (mean ms)  : {statistics.mean(pre_pop_times)*1e3}")
-    print(f"FLAMEGPU2 flocking popgen (mean ms)  : {statistics.mean(pop_gen_times)*1e3}")
-    print(f"FLAMEGPU2 flocking simulate (mean ms): {statistics.mean(sim_times)*1e3}")
-    print(f"FLAMEGPU2 flocking main (mean ms)    : {statistics.mean(main_times)*1e3}")
+    print(f"repast4py flocking prepop times (s)  : {pre_pop_times}")
+    print(f"repast4py flocking popgen times (s)  : {pop_gen_times}")
+    print(f"repast4py flocking simulate times (s): {sim_times}")
+    print(f"repast4py flocking main times (s)    : {main_times}")
+    print(f"repast4py flocking prepop (mean ms)  : {statistics.mean(pre_pop_times)*1e3}")
+    print(f"repast4py flocking popgen (mean ms)  : {statistics.mean(pop_gen_times)*1e3}")
+    print(f"repast4py flocking simulate (mean ms): {statistics.mean(sim_times)*1e3}")
+    print(f"repast4py flocking main (mean ms)    : {statistics.mean(main_times)*1e3}")
+    # Cleanup
+    os.remove(flocking_params_path)
 
 
-# else:
-#     print(f"Error: FLAMEGPU2 flocking executable ({flocking_binary_path}) does not exist. Please build the executables.", file=sys.stderr)
+else:
+     print(f"Error: pyFLAMEGPU flocking model ({flocking_model_path}) does not exist. Please check paths are correct.", file=sys.stderr)
 
 # Benchmark Schelling
-schelling_binary_path = SCRIPT_PATH / f"{BUILD_DIR}/bin/{CONFIG}/schelling"
-if schelling_binary_path.is_file():
+schelling_model_path = SCRIPT_PATH / "src/schelling/schelling.py"
+schelling_params_path = SCRIPT_PATH / "src/schelling/temp_params.yaml"
+if schelling_model_path.is_file():
     pre_pop_times = []
     pop_gen_times = []
     main_times = []
     sim_times = []
     random.seed(SEED)
     for i in range(0, REPETITIONS):
-        result = subprocess.run([str(schelling_binary_path), "-s", "100", "-r", str(random.randint(0, 999999999))], stdout=subprocess.PIPE)
+        # Create a seeded param file
+        with open(schelling_params_path, "w") as f:
+            params = f.write(
+f"""stop.at: 10.0
+grid.width: 500
+population.count: 200000
+csv.log: ""
+random.seed: {random.randint(0, 999999999)}
+""")
+        result = subprocess.run([sys.executable, str(schelling_model_path), str(schelling_params_path)], stdout=subprocess.PIPE)
         # @todo make this less brittle
         lines = result.stdout.decode('utf-8').splitlines()
         pre_pop_time, pop_gen_time, main_time, sim_time = extract_times(lines)
@@ -103,15 +125,16 @@ if schelling_binary_path.is_file():
         pop_gen_times.append(pop_gen_time)
         main_times.append(main_time)
         sim_times.append(sim_time)
-    print(f"FLAMEGPU2 schelling prepop times (s)  : {pre_pop_times}")
-    print(f"FLAMEGPU2 schelling popgen times (s)  : {pop_gen_times}")
-    print(f"FLAMEGPU2 schelling simulate times (s): {sim_times}")
-    print(f"FLAMEGPU2 schelling main times (s)    : {main_times}")
-    print(f"FLAMEGPU2 schelling prepop (mean ms)  : {statistics.mean(pre_pop_times)*1e3}")
-    print(f"FLAMEGPU2 schelling popgen (mean ms)  : {statistics.mean(pop_gen_times)*1e3}")
-    print(f"FLAMEGPU2 schelling simulate (mean ms): {statistics.mean(sim_times)*1e3}")
-    print(f"FLAMEGPU2 schelling main (mean ms)    : {statistics.mean(main_times)*1e3}")
-
+    print(f"repast4py schelling prepop times (s)  : {pre_pop_times}")
+    print(f"repast4py schelling popgen times (s)  : {pop_gen_times}")
+    print(f"repast4py schelling simulate times (s): {sim_times}")
+    print(f"repast4py schelling main times (s)    : {main_times}")
+    print(f"repast4py schelling prepop (mean ms)  : {statistics.mean(pre_pop_times)*1e3}")
+    print(f"repast4py schelling popgen (mean ms)  : {statistics.mean(pop_gen_times)*1e3}")
+    print(f"repast4py schelling simulate (mean ms): {statistics.mean(sim_times)*1e3}")
+    print(f"repast4py schelling main (mean ms)    : {statistics.mean(main_times)*1e3}")
+    # Cleanup
+    os.remove(schelling_params_path)
 else:
-    print(f"Error: FLAMEGPU2 schelling executable ({schelling_binary_path}) does not exist. Please build the executables.", file=sys.stderr)
+    print(f"Error: pyFLAMEGPU schelling model ({schelling_model_path}) does not exist. Please check paths are correct.", file=sys.stderr)
 

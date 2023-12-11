@@ -1,0 +1,4 @@
+stop.at: 10.0
+grid.width: 500
+population.count: 200000
+csv.log: "testwrap.csv"

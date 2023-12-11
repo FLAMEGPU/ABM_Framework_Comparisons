@@ -1,0 +1,4 @@
+# Temporary files for benchmarking
+benchmark_config.txt
+temp_params.yaml
+*.csv
