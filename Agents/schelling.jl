@@ -1,11 +1,11 @@
 using Agents
 
 @agent struct SchellingAgent(GridAgent{2})
-    mood::Bool # whether the agent is happy in its position. (true = happy)
-    const group::Int # The group of the agent,  determines mood as it interacts with neighbors
+    mood::Bool
+    const group::Int
 end
 
-function schelling_model(rng, numagents, griddims, min_to_be_happy, radius)
+function schelling_model(rng; numagents, griddims, min_to_be_happy = 3, radius = 1)
     space = GridSpaceSingle(griddims, periodic = false)
     properties = (min_to_be_happy = min_to_be_happy, radius = radius)
     model = StandardABM(SchellingAgent, space; agent_step!, properties, rng,
