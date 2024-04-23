@@ -6,7 +6,6 @@ using Test
 using Statistics
 using BenchmarkTools
 
-# Runs each model SAMPLE_COUNT + 1 times, discarding hte first timing (which includes compilation)
 SAMPLE_COUNT = 10
 rng = Xoshiro(42)
 
